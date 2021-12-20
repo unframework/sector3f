@@ -13,12 +13,12 @@ const App: React.FC = () => {
   return (
     <Canvas
       style={{ height: '100vh' }}
-      onCreated={({ gl }) => {
-        gl.toneMapping = THREE.ACESFilmicToneMapping;
-        gl.toneMappingExposure = 0.9;
+      gl={{
+        alpha: false,
+        toneMapping: THREE.ACESFilmicToneMapping,
+        toneMappingExposure: 0.9,
 
-        gl.outputEncoding = THREE.sRGBEncoding;
-        gl.setClearColor(new THREE.Color('#000410'));
+        outputEncoding: THREE.sRGBEncoding
       }}
     >
       <React.Suspense fallback={null}>
