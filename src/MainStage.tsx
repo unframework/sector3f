@@ -19,7 +19,7 @@ export const MainStage: React.FC = () => {
   return (
     <group>
       <PerspectiveCamera
-        position={[0, -1, 2]}
+        position={[0, -5, 4]}
         up={[0, 0, 1]}
         near={0.1}
         far={500}
@@ -30,12 +30,23 @@ export const MainStage: React.FC = () => {
       <OrbitControls target={[0, 0, 0]} ref={orbitRef} />
 
       <mesh position={[0, 0, 0]}>
-        <planeGeometry args={[2, 2]} />
-        <meshStandardMaterial color="#ff4060" roughness={0.2} />
+        <planeGeometry args={[5, 5]} />
+        <meshStandardMaterial color="#c0c0c8" roughness={0.6} />
       </mesh>
 
-      <pointLight position={[-2, 2, 4]} />
-      <ambientLight color="#202020" />
+      <mesh position={[-2, 0, 0.5]}>
+        <boxGeometry args={[0.25, 2, 1]} />
+        <meshStandardMaterial color="#c08088" roughness={0.6} />
+      </mesh>
+
+      <mesh position={[2, 0, 0.5]}>
+        <boxGeometry args={[0.25, 2, 1]} />
+        <meshStandardMaterial color="#8080c8" roughness={0.6} />
+      </mesh>
+
+      <pointLight position={[-12, 12, 4]} intensity={0.9} color="#f0f0ff" />
+      <pointLight position={[4, -8, 4]} intensity={0.6} color="#fffff0" />
+      <ambientLight color="#404040" />
     </group>
   );
 };
