@@ -20,7 +20,21 @@ export const MainStage: React.FC = () => {
         <meshStandardMaterial color="#8080c8" roughness={0.6} />
       </mesh>
 
-      <pointLight position={[-12, 12, 4]} intensity={0.9} color="#f0f0ff" />
+      <mesh position={[-1.5, 0, 0.55]} castShadow receiveShadow>
+        <boxGeometry args={[0.25, 0.25, 0.25]} />
+        <meshStandardMaterial
+          color="#000000"
+          emissive={new THREE.Color('#ffff00')}
+          emissiveIntensity={3}
+        />
+      </mesh>
+
+      <pointLight
+        position={[-12, 12, 4]}
+        intensity={0.9}
+        color="#f0f0ff"
+        castShadow
+      />
       <pointLight
         position={[4, -8, 4]}
         intensity={0.6}
