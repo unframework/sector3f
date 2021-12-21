@@ -107,6 +107,13 @@
     utility-types "^3.10.0"
     zustand "^3.5.1"
 
+"@react-three/lightmap@^0.0.3":
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/@react-three/lightmap/-/lightmap-0.0.3.tgz#4db7312d7e78a2a630592de12fbb16337a297bff"
+  integrity sha512-YSrKEkhg+kN0nXccHu9TD9fwtbO4DfLIXVwvhgjsB4G5Q69lOfl/osuBJCYfEaA5sbn7lLEC+vJIlPZVJXGkDw==
+  dependencies:
+    potpack "^1.0.1"
+
 "@react-three/postprocessing@^2.0.3":
   version "2.0.5"
   resolved "https://registry.yarnpkg.com/@react-three/postprocessing/-/postprocessing-2.0.5.tgz#9c30e14e0766f9ceee33740682a9fcdd2cfe785a"
