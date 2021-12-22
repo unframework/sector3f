@@ -1,13 +1,28 @@
 import React, { useState, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { MeshReflectorMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 
 export const MainStage: React.FC = () => {
   return (
     <group>
-      <mesh position={[0, 0, 0]} castShadow receiveShadow>
+      <mesh position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[5, 5]} />
-        <meshStandardMaterial color="#c0c0c8" roughness={0.6} />
+        {/*<meshStandardMaterial color="#c0c0c8" roughness={0.6} />*/}
+        <MeshReflectorMaterial
+          color="#c0c0c8"
+          blur={[400, 400]}
+          mirror={0}
+          resolution={1024}
+          mixBlur={1}
+          mixStrength={0.75}
+          depthScale={0.15}
+          minDepthThreshold={0.9}
+          maxDepthThreshold={1}
+          metalness={0}
+          roughness={1}
+          lightMapIntensity={2}
+        />
       </mesh>
 
       <mesh position={[-2, 0, 0.55]} castShadow receiveShadow>
