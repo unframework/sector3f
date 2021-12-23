@@ -14,11 +14,11 @@ body {
   height: 100%;
 }
 
-.matterDebug {
+.physicsDebug {
   position: fixed;
   top: 10px;
   left: 10px;
   width: 480px;
   height: 480px;
-  background: #f0f;
+  background: #100;
 }

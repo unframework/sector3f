@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { Engine, Render, Bodies, Composite, Runner } from 'matter-js';
+import * as b2 from '@flyover/box2d';
 import WebFont from 'webfontloader';
 import { Canvas } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -9,41 +9,68 @@ import { PerspectiveCamera, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
 import { MainStage } from './MainStage';
+import { g_debugDraw, g_camera } from './box2dDebugDraw';
 
 import './index.css';
 
-const MatterMain: React.FC = () => {
+const PhysicsMain: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const engine = Engine.create();
+    const container = containerRef.current!;
+    const canvas = container.childNodes[0] as HTMLCanvasElement;
+    canvas.width = container.offsetWidth;
+    canvas.height = container.offsetHeight;
+    const ctx = canvas.getContext('2d')!;
 
-    // create two boxes and a ground
-    const boxA = Bodies.rectangle(200, 120, 80, 80);
-    const boxB = Bodies.rectangle(250, 20, 80, 80);
-    const ground = Bodies.rectangle(240, 460, 460, 20, { isStatic: true });
+    const world = new b2.World(new b2.Vec2(0, 0));
 
-    // add all of the bodies to the world
-    Composite.add(engine.world, [boxA, boxB, ground]);
+    const bodyDef = new b2.BodyDef();
+    bodyDef.type = b2.dynamicBody;
+    bodyDef.position.x = 0;
+    bodyDef.position.y = 0;
 
-    // debug render
-    const debugContainer = containerRef.current!;
-    const render = Render.create({
-      element: debugContainer,
-      engine: engine,
-      options: {
-        width: debugContainer.offsetWidth,
-        height: debugContainer.offsetHeight
-      }
-    });
-    Render.run(render);
+    const fixDef = new b2.FixtureDef();
+    const shape = (fixDef.shape = new b2.PolygonShape());
+    fixDef.density = 5.0;
+    fixDef.friction = 0.8;
+    fixDef.restitution = 0.0;
+    shape.SetAsBox(2, 2);
 
-    // run the engine
-    const runner = Runner.create();
-    Runner.run(runner, engine);
+    const baseBody = world.CreateBody(bodyDef);
+    baseBody.CreateFixture(fixDef);
+
+    g_camera.m_center.x = 0;
+    g_camera.m_center.y = 0;
+    g_camera.m_extent = 10;
+    g_camera.m_width = canvas.width;
+    g_camera.m_height = canvas.height;
+
+    g_debugDraw.m_ctx = ctx;
+    g_debugDraw.m_drawFlags = b2.DrawFlags.e_shapeBit;
+
+    world.SetDebugDraw(g_debugDraw);
+
+    ctx.translate(0.5 * canvas.width, 0.5 * canvas.height);
+    ctx.scale(1, -1);
+
+    const s: number = (0.5 * g_camera.m_height) / g_camera.m_extent;
+    ctx.scale(s, s);
+    ctx.lineWidth /= s;
+
+    ctx.scale(1 / g_camera.m_zoom, 1 / g_camera.m_zoom);
+    ctx.lineWidth *= g_camera.m_zoom;
+    ctx.translate(-g_camera.m_center.x, -g_camera.m_center.y);
+
+    world.Step(1 / 60, 3, 3);
+    world.DebugDraw();
   }, []);
 
-  return <div className="matterDebug" ref={containerRef} />;
+  return (
+    <div className="physicsDebug" ref={containerRef}>
+      <canvas />
+    </div>
+  );
 };
 
 const App: React.FC = () => {
@@ -87,7 +114,7 @@ const App: React.FC = () => {
         </EffectComposer>
       </Canvas>
 
-      <MatterMain />
+      <PhysicsMain />
     </>
   );
 };
