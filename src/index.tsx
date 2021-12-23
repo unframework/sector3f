@@ -9,6 +9,7 @@ import { PerspectiveCamera, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
 import { MainStage } from './MainStage';
+import { useWASD } from './wasd';
 import { g_debugDraw, g_camera } from './box2dDebugDraw';
 
 import './index.css';
@@ -74,6 +75,9 @@ const PhysicsMain: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  const [moveX, moveY] = useWASD();
+  console.log('input', moveX, moveY);
+
   return (
     <>
       <Canvas
