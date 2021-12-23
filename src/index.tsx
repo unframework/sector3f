@@ -14,6 +14,45 @@ import { g_debugDraw, g_camera } from './box2dDebugDraw';
 
 import './index.css';
 
+function createStepTimer(physicsStepDuration: number, onTick: () => void) {
+  let lastTime = performance.now(),
+    physicsStepAccumulator = 0;
+
+  let isStopped = false;
+
+  function update() {
+    if (isStopped) {
+      return;
+    }
+
+    const time = performance.now();
+    const elapsed = Math.max(0, Math.min(0.1, (time - lastTime) / 1000));
+
+    lastTime = time;
+
+    physicsStepAccumulator += elapsed;
+
+    while (physicsStepAccumulator > physicsStepDuration) {
+      onTick();
+      physicsStepAccumulator -= physicsStepDuration;
+    }
+
+    // restart
+    requestAnimationFrame(update);
+  }
+
+  // kick off initial run in next RAF tick
+  requestAnimationFrame(update);
+
+  return {
+    stop() {
+      isStopped = true;
+    }
+  };
+}
+
+const STEP = 1 / 60;
+
 const PhysicsMain: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -52,19 +91,32 @@ const PhysicsMain: React.FC = () => {
 
     world.SetDebugDraw(g_debugDraw);
 
-    ctx.translate(0.5 * canvas.width, 0.5 * canvas.height);
-    ctx.scale(1, -1);
+    const timer = createStepTimer(STEP, () => {
+      world.Step(STEP, 3, 3);
 
-    const s: number = (0.5 * g_camera.m_height) / g_camera.m_extent;
-    ctx.scale(s, s);
-    ctx.lineWidth /= s;
+      // debug draw
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    ctx.scale(1 / g_camera.m_zoom, 1 / g_camera.m_zoom);
-    ctx.lineWidth *= g_camera.m_zoom;
-    ctx.translate(-g_camera.m_center.x, -g_camera.m_center.y);
+      ctx.save();
+      ctx.translate(0.5 * canvas.width, 0.5 * canvas.height);
+      ctx.scale(1, -1);
 
-    world.Step(1 / 60, 3, 3);
-    world.DebugDraw();
+      const s: number = (0.5 * g_camera.m_height) / g_camera.m_extent;
+      ctx.scale(s, s);
+      ctx.lineWidth /= s;
+
+      ctx.scale(1 / g_camera.m_zoom, 1 / g_camera.m_zoom);
+      ctx.lineWidth *= g_camera.m_zoom;
+      ctx.translate(-g_camera.m_center.x, -g_camera.m_center.y);
+
+      world.DebugDraw();
+
+      ctx.restore();
+    });
+
+    return () => {
+      timer.stop();
+    };
   }, []);
 
   return (
