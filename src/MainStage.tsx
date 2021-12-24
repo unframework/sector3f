@@ -34,17 +34,23 @@ export const MainStage: React.FC = () => {
         <mesh position={[-2, 0, 0.55]} castShadow receiveShadow>
           <boxGeometry args={[0.25, 2, 1]} />
           <meshStandardMaterial color="#c08088" roughness={0.6} />
+          <Body isStatic />
         </mesh>
 
         <mesh position={[2, 0, 0.55]} castShadow receiveShadow>
           <boxGeometry args={[0.25, 2, 1]} />
           <meshStandardMaterial color="#8080c8" roughness={0.6} />
+          <Body isStatic />
         </mesh>
 
-        <mesh position={[2, 2, 0.5]} castShadow receiveShadow>
+        <mesh position={[0, 2, 0.25]} castShadow receiveShadow>
+          <boxGeometry args={[0.5, 0.5, 0.5]} />
+          <meshStandardMaterial color="#c8c880" roughness={0.9} />
+          <Body />
+        </mesh>
+        <mesh position={[1, 2, 0.5]} castShadow receiveShadow>
           <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial color="#80c880" roughness={0.9} />
-
           <Body />
         </mesh>
 

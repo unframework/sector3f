@@ -172,8 +172,9 @@ export const TopDownPhysics: React.FC<{ playerMovement: [number, number] }> = ({
 };
 
 export const Body: React.FC<{
+  isStatic?: boolean;
   init?: (world: b2.World) => b2.Body;
-}> = ({ init }) => {
+}> = ({ isStatic, init }) => {
   const initRef = useRef(init); // storing value only once
 
   const [parentObject, setParentObject] = useState<THREE.Object3D | null>(null);
@@ -210,7 +211,7 @@ export const Body: React.FC<{
     const bodyDef = new b2.BodyDef();
     const fixDef = new b2.FixtureDef();
 
-    bodyDef.type = b2.dynamicBody;
+    bodyDef.type = isStatic ? b2.staticBody : b2.dynamicBody;
     bodyDef.position.x = meshObject.position.x;
     bodyDef.position.y = meshObject.position.y;
     bodyDef.linearDamping = 1;
@@ -218,28 +219,37 @@ export const Body: React.FC<{
     const body = world.CreateBody(bodyDef);
 
     const shape = new b2.PolygonShape();
-    shape.SetAsBox(meshGeom.parameters.width, meshGeom.parameters.height);
+    shape.SetAsBox(
+      meshGeom.parameters.width / 2,
+      meshGeom.parameters.height / 2
+    );
     fixDef.shape = shape;
     fixDef.density = 300.0;
     fixDef.friction = 0.8;
     fixDef.restitution = 0.0;
     body.CreateFixture(fixDef);
 
-    const tuple: ListenerTuple = [body, body.GetPosition(), meshObject];
-    bodyListeners.push(tuple);
+    const tuple: ListenerTuple | null = isStatic
+      ? null
+      : [body, body.GetPosition(), meshObject];
+    if (tuple) {
+      bodyListeners.push(tuple);
+    }
 
     // clean up
     return () => {
       world.DestroyBody(body);
 
-      const tupleIndex = bodyListeners.indexOf(tuple);
-      if (tupleIndex === -1) {
-        console.error('listener tuple disappeared?');
-      } else {
-        bodyListeners.splice(tupleIndex, 1);
+      if (tuple) {
+        const tupleIndex = bodyListeners.indexOf(tuple);
+        if (tupleIndex === -1) {
+          console.error('listener tuple disappeared?');
+        } else {
+          bodyListeners.splice(tupleIndex, 1);
+        }
       }
     };
-  }, [info]);
+  }, [isStatic, info]);
 
   // if parentObject is known, then no need to render the group anymore
   return parentObject ? null : <group ref={groupRef} />;
