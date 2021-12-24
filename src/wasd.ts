@@ -1,11 +1,18 @@
 import { useState, useLayoutEffect, useRef } from 'react';
 
-// @todo return an event stream instead of causing rerenders on every change?
-// this is because stick controls do not affect orchestration directly
+// exposes an object that gets updated imperatively, meant for polling
 export function useWASD(): [number, number] {
-  const [keys, setKeys] = useState<Record<string, boolean | undefined>>({});
+  // not actually using state changes
+  const [state] = useState<[number, number]>(() => [0, 0]);
 
   useLayoutEffect(() => {
+    const keys: Record<string, boolean | undefined> = {};
+
+    function recomputeState() {
+      state[0] = (keys.a ? -1 : 0) + (keys.d ? 1 : 0);
+      state[1] = (keys.s ? -1 : 0) + (keys.w ? 1 : 0);
+    }
+
     // key listener
     const mainHandler = (modeDown: boolean, event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
@@ -14,14 +21,8 @@ export function useWASD(): [number, number] {
         case 'd':
         case 'w':
         case 's':
-          setKeys(prev => {
-            // avoid triggering re-render if same state
-            if (!!prev[key] === modeDown) {
-              return prev;
-            }
-
-            return { ...prev, [key]: modeDown };
-          });
+          keys[key] = modeDown;
+          recomputeState();
           break;
       }
     };
@@ -30,7 +31,10 @@ export function useWASD(): [number, number] {
 
     // window blur
     const blurHandler = () => {
-      setKeys({});
+      for (const k of Object.keys(keys)) {
+        keys[k] = false;
+      }
+      recomputeState();
     };
 
     // hook up events
@@ -46,11 +50,7 @@ export function useWASD(): [number, number] {
     };
   }, []);
 
-  // compute active "input stick" values
-  const keyMotionX = (keys.a ? -1 : 0) + (keys.d ? 1 : 0);
-  const keyMotionY = (keys.s ? -1 : 0) + (keys.w ? 1 : 0);
-
-  return [keyMotionX, keyMotionY];
+  return state;
 }
 
 // return simple state object that can be polled in the game loop
