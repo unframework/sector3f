@@ -1,4 +1,4 @@
-import { useState, useLayoutEffect } from 'react';
+import { useState, useLayoutEffect, useRef } from 'react';
 
 // @todo return an event stream instead of causing rerenders on every change?
 // this is because stick controls do not affect orchestration directly
@@ -51,4 +51,82 @@ export function useWASD(): [number, number] {
   const keyMotionY = (keys.s ? -1 : 0) + (keys.w ? 1 : 0);
 
   return [keyMotionX, keyMotionY];
+}
+
+// return simple state object that can be polled in the game loop
+interface CameraLookState {
+  isLocked: boolean;
+  yaw: number;
+  pitch: number;
+}
+
+export function useCameraLook(
+  onUpdate: (state: CameraLookState) => void
+): CameraLookState {
+  // referenced inside event handlers
+  const onUpdateRef = useRef(onUpdate);
+  onUpdateRef.current = onUpdate;
+
+  // not actually using state changes
+  const [state] = useState(() => ({
+    isLocked: false,
+    yaw: 0,
+    pitch: Math.PI / 2 // zero means facing "down", so start facing forward
+  }));
+
+  useLayoutEffect(() => {
+    const moveHandler = (event: MouseEvent) => {
+      // @todo enable this
+      // if (!state.isLocked) {
+      //   return;
+      // }
+
+      const movementX =
+        // @ts-ignore
+        event.movementX || event.mozMovementX || event.webkitMovementX || 0;
+      const movementY =
+        // @ts-ignore
+        event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+
+      let yaw = state.yaw - movementX * 0.004;
+      if (yaw < -Math.PI) {
+        yaw += 2 * Math.PI;
+      } else if (yaw >= Math.PI) {
+        yaw -= 2 * Math.PI;
+      }
+      state.yaw = yaw;
+
+      state.pitch = Math.max(
+        0,
+        Math.min(Math.PI, state.pitch - movementY * 0.004)
+      );
+
+      if (onUpdateRef.current) {
+        onUpdateRef.current(state);
+      }
+    };
+
+    const pointerLockHandler = () => {
+      state.isLocked = document.pointerLockElement === document.body;
+
+      if (onUpdateRef.current) {
+        onUpdateRef.current(state);
+      }
+    };
+
+    // hook up events
+    document.body.addEventListener('mousemove', moveHandler);
+    document.body.addEventListener('pointerlockchange', pointerLockHandler);
+
+    return () => {
+      // clean up events
+      document.body.removeEventListener('mousemove', moveHandler);
+      document.body.removeEventListener(
+        'pointerlockchange',
+        pointerLockHandler
+      );
+    };
+  }, []);
+
+  return state;
 }

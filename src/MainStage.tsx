@@ -1,17 +1,37 @@
 import React, { useState, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { MeshReflectorMaterial } from '@react-three/drei';
+import { PerspectiveCamera, MeshReflectorMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 
-import { useWASD } from './wasd';
+import { useWASD, useCameraLook } from './wasd';
 import { TopDownPhysics, Body } from './physics';
 
 export const MainStage: React.FC = () => {
+  const cameraRef = useRef<THREE.Camera | null>(null);
+  const cameraLook = useCameraLook(({ yaw, pitch }) => {
+    if (!cameraRef.current) {
+      return;
+    }
+
+    cameraRef.current.quaternion.setFromEuler(
+      new THREE.Euler(pitch, 0, yaw, 'ZXY')
+    );
+  });
   const wasdMovement = useWASD();
 
   return (
     <TopDownPhysics playerMovement={wasdMovement}>
       <group>
+        <group position={[0, 0, 0.5]}>
+          <PerspectiveCamera
+            near={0.1}
+            far={100}
+            fov={45}
+            makeDefault
+            ref={cameraRef}
+          />
+        </group>
+
         <mesh position={[0, 0, 0]} receiveShadow>
           <planeGeometry args={[5, 5]} />
           {/*<meshStandardMaterial color="#c0c0c8" roughness={0.6} />*/}

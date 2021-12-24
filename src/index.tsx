@@ -26,6 +26,7 @@ const App: React.FC = () => {
           outputEncoding: THREE.sRGBEncoding
         }}
       >
+        {/*
         <PerspectiveCamera
           position={[0, -5, 4]}
           up={[0, 0, 1]}
@@ -35,6 +36,7 @@ const App: React.FC = () => {
           makeDefault
         />
         <OrbitControls target={[0, 0, 0]} />
+        */}
 
         <React.Suspense fallback={null}>
           <Lightmap>
