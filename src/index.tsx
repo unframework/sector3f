@@ -11,6 +11,11 @@ import { MainStage } from './MainStage';
 
 import './index.css';
 
+// @todo proper UI/etc
+document.body.addEventListener('click', () => {
+  document.body.requestPointerLock();
+});
+
 const App: React.FC = () => {
   return (
     <>

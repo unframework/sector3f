@@ -76,7 +76,7 @@ export const TopDownPhysics: React.FC = ({ children }) => {
 
     g_camera.m_center.x = 0;
     g_camera.m_center.y = 0;
-    g_camera.m_extent = 10;
+    g_camera.m_extent = 5;
     g_camera.m_width = canvas.width;
     g_camera.m_height = canvas.height;
 
@@ -193,9 +193,9 @@ export const FPSBody: React.FC<{
     const body = world.CreateBody(bodyDef);
 
     const shape = (fixDef.shape = new b2.CircleShape());
-    shape.Set(new b2.Vec2(0, 0), 0.25);
+    shape.Set(new b2.Vec2(0, 0), 0.15);
     fixDef.density = 200.0; // this arrives at about 40kg mass
-    fixDef.friction = 0.8;
+    fixDef.friction = 0.1;
     fixDef.restitution = 0.0;
     body.CreateFixture(fixDef);
 

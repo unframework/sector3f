@@ -24,9 +24,9 @@ export const MainStage: React.FC = () => {
       <group>
         <group position={[0, 0, 0.5]}>
           <PerspectiveCamera
-            near={0.1}
+            near={0.075}
             far={100}
-            fov={45}
+            fov={80}
             makeDefault
             ref={cameraRef}
           />
