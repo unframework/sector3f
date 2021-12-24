@@ -219,9 +219,10 @@ export const Body: React.FC<{
     const body = world.CreateBody(bodyDef);
 
     const shape = new b2.PolygonShape();
+    // reduce by m_radius - the "polygon skin" width - to avoid gaps
     shape.SetAsBox(
-      meshGeom.parameters.width / 2,
-      meshGeom.parameters.height / 2
+      meshGeom.parameters.width / 2 - shape.m_radius,
+      meshGeom.parameters.height / 2 - shape.m_radius
     );
     fixDef.shape = shape;
     fixDef.density = 300.0;
