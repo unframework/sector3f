@@ -42,19 +42,18 @@ function createStepTimer(physicsStepDuration: number, onTick: () => void) {
 
 const STEP = 1 / 60;
 
-export const PhysicsMain: React.FC<{ playerMovement: [number, number] }> = ({
+export const TopDownPhysics: React.FC<{ playerMovement: [number, number] }> = ({
   playerMovement
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-
   const currentMovementRef = useRef(playerMovement);
   currentMovementRef.current = playerMovement;
 
   useEffect(() => {
-    const container = containerRef.current!;
-    const canvas = container.childNodes[0] as HTMLCanvasElement;
-    canvas.width = container.offsetWidth;
-    canvas.height = container.offsetHeight;
+    const canvas = document.createElement('canvas');
+    document.body.appendChild(canvas);
+    canvas.className = 'physicsDebug';
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
     const ctx = canvas.getContext('2d')!;
 
     const world = new b2.World(new b2.Vec2(0, 0));
@@ -146,9 +145,5 @@ export const PhysicsMain: React.FC<{ playerMovement: [number, number] }> = ({
     };
   }, []);
 
-  return (
-    <div className="physicsDebug" ref={containerRef}>
-      <canvas />
-    </div>
-  );
+  return null;
 };

@@ -3,9 +3,16 @@ import { useFrame } from '@react-three/fiber';
 import { MeshReflectorMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 
+import { useWASD } from './wasd';
+import { TopDownPhysics } from './physics';
+
 export const MainStage: React.FC = () => {
+  const wasdMovement = useWASD();
+
   return (
     <group>
+      <TopDownPhysics playerMovement={wasdMovement} />
+
       <mesh position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[5, 5]} />
         {/*<meshStandardMaterial color="#c0c0c8" roughness={0.6} />*/}

@@ -1,5 +1,7 @@
 import { useState, useLayoutEffect } from 'react';
 
+// @todo return an event stream instead of causing rerenders on every change?
+// this is because stick controls do not affect orchestration directly
 export function useWASD(): [number, number] {
   const [keys, setKeys] = useState<Record<string, boolean | undefined>>({});
 

@@ -8,14 +8,10 @@ import { PerspectiveCamera, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
 import { MainStage } from './MainStage';
-import { PhysicsMain } from './physics';
-import { useWASD } from './wasd';
 
 import './index.css';
 
 const App: React.FC = () => {
-  const wasdMovement = useWASD();
-
   return (
     <>
       <Canvas
@@ -55,8 +51,6 @@ const App: React.FC = () => {
           />
         </EffectComposer>
       </Canvas>
-
-      <PhysicsMain playerMovement={wasdMovement} />
     </>
   );
 };
