@@ -66,14 +66,31 @@ export const PhysicsMain: React.FC<{ playerMovement: [number, number] }> = ({
     bodyDef.position.x = 0;
     bodyDef.position.y = 0;
     bodyDef.linearDamping = 10;
+    bodyDef.angularDamping = 10;
+    bodyDef.fixedRotation = true;
     const baseBody = world.CreateBody(bodyDef);
 
     const baseShape = (fixDef.shape = new b2.CircleShape());
     baseShape.Set(new b2.Vec2(0, 0), 0.25);
-    fixDef.density = 5.0;
+    fixDef.density = 200.0; // this arrives at about 40kg mass
     fixDef.friction = 0.8;
     fixDef.restitution = 0.0;
     baseBody.CreateFixture(fixDef);
+
+    bodyDef.type = b2.dynamicBody;
+    bodyDef.position.x = 2;
+    bodyDef.position.y = 2;
+    bodyDef.linearDamping = 1;
+    bodyDef.angularDamping = 1;
+    bodyDef.fixedRotation = false;
+    const testGreeble = world.CreateBody(bodyDef);
+
+    const greebleShape = (fixDef.shape = new b2.PolygonShape());
+    greebleShape.SetAsBox(1, 1);
+    fixDef.density = 300.0;
+    fixDef.friction = 0.8;
+    fixDef.restitution = 0.0;
+    testGreeble.CreateFixture(fixDef);
 
     g_camera.m_center.x = 0;
     g_camera.m_center.y = 0;
