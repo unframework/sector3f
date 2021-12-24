@@ -1,7 +1,11 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import * as b2 from '@flyover/box2d';
+import * as THREE from 'three';
 
+// @todo avoid using globals
 import { g_debugDraw, g_camera } from './box2dDebugDraw';
+
+const WorldContext = React.createContext<b2.World | null>(null);
 
 function createStepTimer(physicsStepDuration: number, onTick: () => void) {
   let lastTime = performance.now(),
@@ -43,8 +47,11 @@ function createStepTimer(physicsStepDuration: number, onTick: () => void) {
 const STEP = 1 / 60;
 
 export const TopDownPhysics: React.FC<{ playerMovement: [number, number] }> = ({
-  playerMovement
+  playerMovement,
+  children
 }) => {
+  const [activeWorld, setActiveWorld] = useState<b2.World | null>(null);
+
   const currentMovementRef = useRef(playerMovement);
   currentMovementRef.current = playerMovement;
 
@@ -57,6 +64,7 @@ export const TopDownPhysics: React.FC<{ playerMovement: [number, number] }> = ({
     const ctx = canvas.getContext('2d')!;
 
     const world = new b2.World(new b2.Vec2(0, 0));
+    setActiveWorld(world);
 
     const bodyDef = new b2.BodyDef();
     const fixDef = new b2.FixtureDef();
@@ -75,21 +83,6 @@ export const TopDownPhysics: React.FC<{ playerMovement: [number, number] }> = ({
     fixDef.friction = 0.8;
     fixDef.restitution = 0.0;
     baseBody.CreateFixture(fixDef);
-
-    bodyDef.type = b2.dynamicBody;
-    bodyDef.position.x = 2;
-    bodyDef.position.y = 2;
-    bodyDef.linearDamping = 1;
-    bodyDef.angularDamping = 1;
-    bodyDef.fixedRotation = false;
-    const testGreeble = world.CreateBody(bodyDef);
-
-    const greebleShape = (fixDef.shape = new b2.PolygonShape());
-    greebleShape.SetAsBox(1, 1);
-    fixDef.density = 300.0;
-    fixDef.friction = 0.8;
-    fixDef.restitution = 0.0;
-    testGreeble.CreateFixture(fixDef);
 
     g_camera.m_center.x = 0;
     g_camera.m_center.y = 0;
@@ -145,5 +138,76 @@ export const TopDownPhysics: React.FC<{ playerMovement: [number, number] }> = ({
     };
   }, []);
 
-  return null;
+  // avoid passing down null while initializing
+  if (!activeWorld) {
+    return null;
+  }
+
+  return (
+    <WorldContext.Provider value={activeWorld}>
+      {children}
+    </WorldContext.Provider>
+  );
+};
+
+export const Body: React.FC<{
+  init?: (world: b2.World) => b2.Body;
+}> = ({ init }) => {
+  const initRef = useRef(init); // storing value only once
+
+  const [parentObject, setParentObject] = useState<THREE.Object3D | null>(null);
+  const groupRef = useRef<THREE.Object3D | null>(null);
+
+  const world = useContext(WorldContext);
+  if (!world) {
+    throw new Error('expecting b2.World');
+  }
+
+  // initialize the physics object
+  useEffect(() => {
+    if (!groupRef.current) {
+      throw new Error('must attach to ThreeJS tree');
+    }
+
+    const meshObject = groupRef.current.parent;
+    if (!(meshObject instanceof THREE.Mesh)) {
+      throw new Error('must attach under ThreeJS mesh');
+    }
+
+    const meshGeom = meshObject.geometry;
+    if (!(meshGeom instanceof THREE.BoxBufferGeometry)) {
+      throw new Error('must attach under ThreeJS mesh with BoxBufferGeometry');
+    }
+
+    console.log('attaching body to', meshObject);
+    setParentObject(meshObject);
+
+    // const body = init(world);
+
+    const bodyDef = new b2.BodyDef();
+    const fixDef = new b2.FixtureDef();
+
+    bodyDef.type = b2.dynamicBody;
+    bodyDef.position.x = meshObject.position.x;
+    bodyDef.position.y = meshObject.position.y;
+    bodyDef.linearDamping = 1;
+    bodyDef.angularDamping = 1;
+    const body = world.CreateBody(bodyDef);
+
+    const shape = new b2.PolygonShape();
+    shape.SetAsBox(meshGeom.parameters.width, meshGeom.parameters.height);
+    fixDef.shape = shape;
+    fixDef.density = 300.0;
+    fixDef.friction = 0.8;
+    fixDef.restitution = 0.0;
+    body.CreateFixture(fixDef);
+
+    // clean up
+    return () => {
+      world.DestroyBody(body);
+    };
+  }, [world]);
+
+  // if parentObject is known, then no need to render the group anymore
+  return parentObject ? null : <group ref={groupRef} />;
 };
