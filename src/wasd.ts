@@ -119,6 +119,11 @@ export function useCameraLook(
     document.body.addEventListener('mousemove', moveHandler);
     document.body.addEventListener('pointerlockchange', pointerLockHandler);
 
+    // fire the initial update
+    if (onUpdateRef.current) {
+      onUpdateRef.current(state);
+    }
+
     return () => {
       // clean up events
       document.body.removeEventListener('mousemove', moveHandler);

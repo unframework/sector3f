@@ -54,12 +54,18 @@ function createStepTimer(physicsStepDuration: number, onTick: () => void) {
 const STEP = 1 / 60;
 
 export const TopDownPhysics: React.FC = ({ children }) => {
-  const [
-    activeContextValue,
-    setActiveContextValue
-  ] = useState<PhysicsInfo | null>(null);
+  // initialize context value
+  const [activeContextValue] = useState<PhysicsInfo>(() => {
+    const world = new b2.World(new b2.Vec2(0, 0));
+    const bodyUpdaters: Updater[] = [];
+    const bodyListeners: ListenerTuple[] = [];
+
+    return { world, bodyListeners, bodyUpdaters };
+  });
 
   useEffect(() => {
+    const { world, bodyUpdaters, bodyListeners } = activeContextValue;
+
     const upVector = new THREE.Vector3(0, 0, 1); // reusable helper
 
     const canvas = document.createElement('canvas');
@@ -68,11 +74,6 @@ export const TopDownPhysics: React.FC = ({ children }) => {
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
     const ctx = canvas.getContext('2d')!;
-
-    const world = new b2.World(new b2.Vec2(0, 0));
-    const bodyUpdaters: Updater[] = [];
-    const bodyListeners: ListenerTuple[] = [];
-    setActiveContextValue({ world, bodyListeners, bodyUpdaters });
 
     g_camera.m_center.x = 0;
     g_camera.m_center.y = 0;
@@ -126,13 +127,11 @@ export const TopDownPhysics: React.FC = ({ children }) => {
 
     return () => {
       timer.stop();
-    };
-  }, []);
 
-  // avoid passing down null while initializing
-  if (!activeContextValue) {
-    return null;
-  }
+      // clean up debug
+      canvas.parentElement!.removeChild(canvas);
+    };
+  }, [activeContextValue]);
 
   return (
     <PhysicsContext.Provider value={activeContextValue}>
