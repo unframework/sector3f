@@ -141,6 +141,9 @@ export const TopDownPhysics: React.FC = ({ children }) => {
   );
 };
 
+// not changing body angle - for movable NPC/player entities, the assumption is
+// that the character "direction" is a purely visual concern
+// (not e.g. generating friction force when turning to change movement direction)
 export const FPSBody: React.FC<{
   movement: [number, number];
   look: { yaw: number };
@@ -183,7 +186,8 @@ export const FPSBody: React.FC<{
     bodyDef.type = b2.dynamicBody;
     bodyDef.position.x = fpsObject.position.x;
     bodyDef.position.y = fpsObject.position.y;
-    bodyDef.angle = bodyDef.linearDamping = 10;
+    bodyDef.angle = 0;
+    bodyDef.linearDamping = 10;
     bodyDef.angularDamping = 10;
     bodyDef.fixedRotation = true;
     const body = world.CreateBody(bodyDef);
@@ -212,7 +216,6 @@ export const FPSBody: React.FC<{
 
       impulseTmp.SelfMul(STEP * mass * 45);
       body.ApplyLinearImpulseToCenter(impulseTmp);
-      body.SetAngle(yaw); // for display
     };
     bodyUpdaters.push(updater);
 
