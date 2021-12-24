@@ -53,8 +53,13 @@ function createStepTimer(physicsStepDuration: number, onTick: () => void) {
 
 const STEP = 1 / 60;
 
-const PhysicsMain: React.FC = () => {
+const PhysicsMain: React.FC<{ playerMovement: [number, number] }> = ({
+  playerMovement
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const currentMovementRef = useRef(playerMovement);
+  currentMovementRef.current = playerMovement;
 
   useEffect(() => {
     const container = containerRef.current!;
@@ -66,18 +71,19 @@ const PhysicsMain: React.FC = () => {
     const world = new b2.World(new b2.Vec2(0, 0));
 
     const bodyDef = new b2.BodyDef();
+    const fixDef = new b2.FixtureDef();
+
     bodyDef.type = b2.dynamicBody;
     bodyDef.position.x = 0;
     bodyDef.position.y = 0;
+    bodyDef.linearDamping = 10;
+    const baseBody = world.CreateBody(bodyDef);
 
-    const fixDef = new b2.FixtureDef();
-    const shape = (fixDef.shape = new b2.PolygonShape());
+    const baseShape = (fixDef.shape = new b2.CircleShape());
+    baseShape.Set(new b2.Vec2(0, 0), 0.25);
     fixDef.density = 5.0;
     fixDef.friction = 0.8;
     fixDef.restitution = 0.0;
-    shape.SetAsBox(2, 2);
-
-    const baseBody = world.CreateBody(bodyDef);
     baseBody.CreateFixture(fixDef);
 
     g_camera.m_center.x = 0;
@@ -91,7 +97,22 @@ const PhysicsMain: React.FC = () => {
 
     world.SetDebugDraw(g_debugDraw);
 
+    // computation helper
+    const playerImpulseTmp = new b2.Vec2(0, 0);
+
     const timer = createStepTimer(STEP, () => {
+      // apply motion as minimum movement impulse against linear damping
+      const [playerMX, playerMY] = currentMovementRef.current;
+
+      playerImpulseTmp.Set(playerMX, playerMY);
+      if (playerMX || playerMY) {
+        playerImpulseTmp.Normalize();
+      }
+
+      playerImpulseTmp.SelfMul(STEP * baseBody.GetMass() * 45);
+      baseBody.ApplyLinearImpulseToCenter(playerImpulseTmp);
+
+      // solve physics
       world.Step(STEP, 3, 3);
 
       // debug draw
@@ -127,8 +148,7 @@ const PhysicsMain: React.FC = () => {
 };
 
 const App: React.FC = () => {
-  const [moveX, moveY] = useWASD();
-  console.log('input', moveX, moveY);
+  const wasdMovement = useWASD();
 
   return (
     <>
@@ -170,7 +190,7 @@ const App: React.FC = () => {
         </EffectComposer>
       </Canvas>
 
-      <PhysicsMain />
+      <PhysicsMain playerMovement={wasdMovement} />
     </>
   );
 };

@@ -1,6 +1,6 @@
 import { useState, useLayoutEffect } from 'react';
 
-export function useWASD() {
+export function useWASD(): [number, number] {
   const [keys, setKeys] = useState<Record<string, boolean | undefined>>({});
 
   useLayoutEffect(() => {
