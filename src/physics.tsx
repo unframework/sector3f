@@ -144,9 +144,13 @@ export const TopDownPhysics: React.FC = ({ children }) => {
 // that the character "direction" is a purely visual concern
 // (not e.g. generating friction force when turning to change movement direction)
 export const FPSBody: React.FC<{
+  radius: number;
   movement: [number, number];
   look: { yaw: number };
-}> = ({ movement, look }) => {
+}> = ({ radius, movement, look }) => {
+  // one-time read
+  const initialRadiusRef = useRef(radius);
+
   // reference for polling
   const movementRef = useRef(movement);
   movementRef.current = movement;
@@ -192,7 +196,7 @@ export const FPSBody: React.FC<{
     const body = world.CreateBody(bodyDef);
 
     const shape = (fixDef.shape = new b2.CircleShape());
-    shape.Set(new b2.Vec2(0, 0), 0.15);
+    shape.Set(new b2.Vec2(0, 0), initialRadiusRef.current);
     fixDef.density = 200.0; // this arrives at about 40kg mass
     fixDef.friction = 0.1;
     fixDef.restitution = 0.0;

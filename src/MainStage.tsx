@@ -30,7 +30,7 @@ export const MainStage: React.FC = () => {
             makeDefault
             ref={cameraRef}
           />
-          <FPSBody movement={wasdMovement} look={cameraLook} />
+          <FPSBody radius={0.15} movement={wasdMovement} look={cameraLook} />
         </group>
 
         <mesh position={[0, 0, 0]} receiveShadow>
