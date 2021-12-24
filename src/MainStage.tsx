@@ -4,7 +4,7 @@ import { PerspectiveCamera, MeshReflectorMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 
 import { useWASD, useCameraLook } from './wasd';
-import { TopDownPhysics, Body } from './physics';
+import { TopDownPhysics, Body, FPSBody } from './physics';
 
 export const MainStage: React.FC = () => {
   const cameraRef = useRef<THREE.Camera | null>(null);
@@ -20,7 +20,7 @@ export const MainStage: React.FC = () => {
   const wasdMovement = useWASD();
 
   return (
-    <TopDownPhysics playerMovement={wasdMovement}>
+    <TopDownPhysics>
       <group>
         <group position={[0, 0, 0.5]}>
           <PerspectiveCamera
@@ -30,6 +30,7 @@ export const MainStage: React.FC = () => {
             makeDefault
             ref={cameraRef}
           />
+          <FPSBody movement={wasdMovement} look={cameraLook} />
         </group>
 
         <mesh position={[0, 0, 0]} receiveShadow>

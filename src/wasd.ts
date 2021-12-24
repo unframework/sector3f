@@ -60,6 +60,7 @@ interface CameraLookState {
   pitch: number;
 }
 
+// exposes an object that gets updated imperatively, meant for polling
 export function useCameraLook(
   onUpdate: (state: CameraLookState) => void
 ): CameraLookState {

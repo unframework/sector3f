@@ -5,9 +5,11 @@ import * as THREE from 'three';
 // @todo avoid using globals
 import { g_debugDraw, g_camera } from './box2dDebugDraw';
 
+type Updater = () => void;
 type ListenerTuple = [b2.Body, b2.Vec2, THREE.Object3D];
 interface PhysicsInfo {
   world: b2.World;
+  bodyUpdaters: Updater[];
   bodyListeners: ListenerTuple[];
 }
 const PhysicsContext = React.createContext<PhysicsInfo | null>(null);
@@ -51,17 +53,11 @@ function createStepTimer(physicsStepDuration: number, onTick: () => void) {
 
 const STEP = 1 / 60;
 
-export const TopDownPhysics: React.FC<{ playerMovement: [number, number] }> = ({
-  playerMovement,
-  children
-}) => {
+export const TopDownPhysics: React.FC = ({ children }) => {
   const [
     activeContextValue,
     setActiveContextValue
   ] = useState<PhysicsInfo | null>(null);
-
-  const currentMovementRef = useRef(playerMovement);
-  currentMovementRef.current = playerMovement;
 
   useEffect(() => {
     const upVector = new THREE.Vector3(0, 0, 1); // reusable helper
@@ -74,26 +70,9 @@ export const TopDownPhysics: React.FC<{ playerMovement: [number, number] }> = ({
     const ctx = canvas.getContext('2d')!;
 
     const world = new b2.World(new b2.Vec2(0, 0));
+    const bodyUpdaters: Updater[] = [];
     const bodyListeners: ListenerTuple[] = [];
-    setActiveContextValue({ world, bodyListeners });
-
-    const bodyDef = new b2.BodyDef();
-    const fixDef = new b2.FixtureDef();
-
-    bodyDef.type = b2.dynamicBody;
-    bodyDef.position.x = 0;
-    bodyDef.position.y = 0;
-    bodyDef.linearDamping = 10;
-    bodyDef.angularDamping = 10;
-    bodyDef.fixedRotation = true;
-    const baseBody = world.CreateBody(bodyDef);
-
-    const baseShape = (fixDef.shape = new b2.CircleShape());
-    baseShape.Set(new b2.Vec2(0, 0), 0.25);
-    fixDef.density = 200.0; // this arrives at about 40kg mass
-    fixDef.friction = 0.8;
-    fixDef.restitution = 0.0;
-    baseBody.CreateFixture(fixDef);
+    setActiveContextValue({ world, bodyListeners, bodyUpdaters });
 
     g_camera.m_center.x = 0;
     g_camera.m_center.y = 0;
@@ -106,20 +85,11 @@ export const TopDownPhysics: React.FC<{ playerMovement: [number, number] }> = ({
 
     world.SetDebugDraw(g_debugDraw);
 
-    // computation helper
-    const playerImpulseTmp = new b2.Vec2(0, 0);
-
     const timer = createStepTimer(STEP, () => {
-      // apply motion as minimum movement impulse against linear damping
-      const [playerMX, playerMY] = currentMovementRef.current;
-
-      playerImpulseTmp.Set(playerMX, playerMY);
-      if (playerMX || playerMY) {
-        playerImpulseTmp.Normalize();
+      // update bodies before solve
+      for (let i = 0; i < bodyUpdaters.length; i += 1) {
+        bodyUpdaters[i]();
       }
-
-      playerImpulseTmp.SelfMul(STEP * baseBody.GetMass() * 45);
-      baseBody.ApplyLinearImpulseToCenter(playerImpulseTmp);
 
       // solve physics
       world.Step(STEP, 3, 3);
@@ -143,7 +113,7 @@ export const TopDownPhysics: React.FC<{ playerMovement: [number, number] }> = ({
 
       ctx.restore();
 
-      // update rendered bodies
+      // update rendered objects
       for (let i = 0; i < bodyListeners.length; i += 1) {
         const [body, bodyPos, target] = bodyListeners[i];
 
@@ -169,6 +139,108 @@ export const TopDownPhysics: React.FC<{ playerMovement: [number, number] }> = ({
       {children}
     </PhysicsContext.Provider>
   );
+};
+
+export const FPSBody: React.FC<{
+  movement: [number, number];
+  look: { yaw: number };
+}> = ({ movement, look }) => {
+  // reference for polling
+  const movementRef = useRef(movement);
+  movementRef.current = movement;
+  const lookRef = useRef(look);
+  lookRef.current = look;
+
+  const [parentObject, setParentObject] = useState<THREE.Object3D | null>(null);
+  const groupRef = useRef<THREE.Object3D | null>(null);
+
+  const info = useContext(PhysicsContext);
+  if (!info) {
+    throw new Error('expecting b2.World');
+  }
+
+  // initialize the physics object
+  useEffect(() => {
+    const { world, bodyUpdaters, bodyListeners } = info;
+
+    if (!groupRef.current) {
+      throw new Error('must attach to ThreeJS tree');
+    }
+
+    const fpsObject = groupRef.current.parent;
+    if (!fpsObject) {
+      throw new Error('must attach under ThreeJS object');
+    }
+
+    setParentObject(fpsObject);
+
+    // computation helper
+    const impulseTmp = new b2.Vec2(0, 0);
+
+    const bodyDef = new b2.BodyDef();
+    const fixDef = new b2.FixtureDef();
+
+    bodyDef.type = b2.dynamicBody;
+    bodyDef.position.x = fpsObject.position.x;
+    bodyDef.position.y = fpsObject.position.y;
+    bodyDef.angle = bodyDef.linearDamping = 10;
+    bodyDef.angularDamping = 10;
+    bodyDef.fixedRotation = true;
+    const body = world.CreateBody(bodyDef);
+
+    const shape = (fixDef.shape = new b2.CircleShape());
+    shape.Set(new b2.Vec2(0, 0), 0.25);
+    fixDef.density = 200.0; // this arrives at about 40kg mass
+    fixDef.friction = 0.8;
+    fixDef.restitution = 0.0;
+    body.CreateFixture(fixDef);
+
+    const mass = body.GetMass();
+
+    // per-frame control
+    const updater = () => {
+      // apply motion as minimum movement impulse against linear damping
+      const [mx, my] = movementRef.current;
+      const { yaw } = lookRef.current;
+
+      // use Y-axis as the "forward" direction
+      impulseTmp.Set(mx, my);
+      if (mx || my) {
+        impulseTmp.SelfNormalize();
+        impulseTmp.SelfRotate(yaw);
+      }
+
+      impulseTmp.SelfMul(STEP * mass * 45);
+      body.ApplyLinearImpulseToCenter(impulseTmp);
+      body.SetAngle(yaw); // for display
+    };
+    bodyUpdaters.push(updater);
+
+    const tuple: ListenerTuple = [body, body.GetPosition(), fpsObject];
+    bodyListeners.push(tuple);
+
+    // clean up
+    return () => {
+      world.DestroyBody(body);
+
+      const updaterIndex = bodyUpdaters.indexOf(updater);
+      if (updaterIndex === -1) {
+        console.error('updater disappeared?');
+      } else {
+        bodyUpdaters.splice(updaterIndex, 1);
+      }
+
+      const tupleIndex = bodyListeners.indexOf(tuple);
+      if (tupleIndex === -1) {
+        console.error('listener tuple disappeared?');
+      } else {
+        bodyListeners.splice(tupleIndex, 1);
+      }
+    };
+  }, [info]);
+
+  // if parentObject is known, then no need to render the group anymore
+  return parentObject ? null : <group ref={groupRef} />;
 };
 
 export const Body: React.FC<{
