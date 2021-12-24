@@ -5,7 +5,12 @@ import * as THREE from 'three';
 // @todo avoid using globals
 import { g_debugDraw, g_camera } from './box2dDebugDraw';
 
-const WorldContext = React.createContext<b2.World | null>(null);
+type ListenerTuple = [b2.Body, b2.Vec2, THREE.Object3D];
+interface PhysicsInfo {
+  world: b2.World;
+  bodyListeners: ListenerTuple[];
+}
+const PhysicsContext = React.createContext<PhysicsInfo | null>(null);
 
 function createStepTimer(physicsStepDuration: number, onTick: () => void) {
   let lastTime = performance.now(),
@@ -50,12 +55,17 @@ export const TopDownPhysics: React.FC<{ playerMovement: [number, number] }> = ({
   playerMovement,
   children
 }) => {
-  const [activeWorld, setActiveWorld] = useState<b2.World | null>(null);
+  const [
+    activeContextValue,
+    setActiveContextValue
+  ] = useState<PhysicsInfo | null>(null);
 
   const currentMovementRef = useRef(playerMovement);
   currentMovementRef.current = playerMovement;
 
   useEffect(() => {
+    const upVector = new THREE.Vector3(0, 0, 1); // reusable helper
+
     const canvas = document.createElement('canvas');
     document.body.appendChild(canvas);
     canvas.className = 'physicsDebug';
@@ -64,7 +74,8 @@ export const TopDownPhysics: React.FC<{ playerMovement: [number, number] }> = ({
     const ctx = canvas.getContext('2d')!;
 
     const world = new b2.World(new b2.Vec2(0, 0));
-    setActiveWorld(world);
+    const bodyListeners: ListenerTuple[] = [];
+    setActiveContextValue({ world, bodyListeners });
 
     const bodyDef = new b2.BodyDef();
     const fixDef = new b2.FixtureDef();
@@ -131,6 +142,16 @@ export const TopDownPhysics: React.FC<{ playerMovement: [number, number] }> = ({
       world.DebugDraw();
 
       ctx.restore();
+
+      // update rendered bodies
+      for (let i = 0; i < bodyListeners.length; i += 1) {
+        const [body, bodyPos, target] = bodyListeners[i];
+
+        target.position.x = bodyPos.x;
+        target.position.y = bodyPos.y;
+        target.quaternion.setFromAxisAngle(upVector, body.GetAngle());
+        target.matrixWorldNeedsUpdate = true;
+      }
     });
 
     return () => {
@@ -139,14 +160,14 @@ export const TopDownPhysics: React.FC<{ playerMovement: [number, number] }> = ({
   }, []);
 
   // avoid passing down null while initializing
-  if (!activeWorld) {
+  if (!activeContextValue) {
     return null;
   }
 
   return (
-    <WorldContext.Provider value={activeWorld}>
+    <PhysicsContext.Provider value={activeContextValue}>
       {children}
-    </WorldContext.Provider>
+    </PhysicsContext.Provider>
   );
 };
 
@@ -158,13 +179,15 @@ export const Body: React.FC<{
   const [parentObject, setParentObject] = useState<THREE.Object3D | null>(null);
   const groupRef = useRef<THREE.Object3D | null>(null);
 
-  const world = useContext(WorldContext);
-  if (!world) {
+  const info = useContext(PhysicsContext);
+  if (!info) {
     throw new Error('expecting b2.World');
   }
 
   // initialize the physics object
   useEffect(() => {
+    const { world, bodyListeners } = info;
+
     if (!groupRef.current) {
       throw new Error('must attach to ThreeJS tree');
     }
@@ -202,11 +225,21 @@ export const Body: React.FC<{
     fixDef.restitution = 0.0;
     body.CreateFixture(fixDef);
 
+    const tuple: ListenerTuple = [body, body.GetPosition(), meshObject];
+    bodyListeners.push(tuple);
+
     // clean up
     return () => {
       world.DestroyBody(body);
+
+      const tupleIndex = bodyListeners.indexOf(tuple);
+      if (tupleIndex === -1) {
+        console.error('listener tuple disappeared?');
+      } else {
+        bodyListeners.splice(tupleIndex, 1);
+      }
     };
-  }, [world]);
+  }, [info]);
 
   // if parentObject is known, then no need to render the group anymore
   return parentObject ? null : <group ref={groupRef} />;

@@ -41,7 +41,7 @@ export const MainStage: React.FC = () => {
           <meshStandardMaterial color="#8080c8" roughness={0.6} />
         </mesh>
 
-        <mesh position={[2, 2, 0]} castShadow receiveShadow>
+        <mesh position={[2, 2, 0.5]} castShadow receiveShadow>
           <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial color="#80c880" roughness={0.9} />
 
