@@ -1,11 +1,11 @@
 import React, { useLayoutEffect, useState, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { PerspectiveCamera, MeshReflectorMaterial } from '@react-three/drei';
+import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 
 import { useWASD, useCameraLook } from './wasd';
 import { TopDownPhysics, Body, FPSBody } from './physics';
-import { CSGModel, Op, Shape } from './csg';
+import { StaticLevel } from './StaticLevel';
 
 export const MainStage: React.FC = () => {
   const cameraRef = useRef<THREE.Camera | null>(null);
@@ -34,55 +34,20 @@ export const MainStage: React.FC = () => {
           <FPSBody radius={0.15} movement={wasdMovement} look={cameraLook} />
         </group>
 
-        <CSGModel>
-          <Op type="union">
-            <Shape
-              type="cylinder"
-              center={[0, 0, 1]}
-              height={1}
-              radius={1}
-              segments={4}
-            />
-            <Shape
-              type="cylinder"
-              center={[0, 0.5, 1.5]}
-              height={1}
-              radius={1}
-              segments={4}
-            />
-          </Op>
-        </CSGModel>
+        <React.Suspense
+          fallback={
+            <>
+              <pointLight position={[0, 0, 6]} color="#f0f0ff" castShadow />
 
-        <mesh position={[0, 0, 0]} receiveShadow>
-          <planeGeometry args={[5, 5]} />
-          {/*<meshStandardMaterial color="#c0c0c8" roughness={0.6} />*/}
-          <MeshReflectorMaterial
-            color="#c0c0c8"
-            blur={[400, 400]}
-            mirror={0}
-            resolution={1024}
-            mixBlur={1}
-            mixStrength={0.75}
-            depthScale={0.15}
-            minDepthThreshold={0.9}
-            maxDepthThreshold={1}
-            metalness={0}
-            roughness={1}
-            lightMapIntensity={2}
-          />
-        </mesh>
-
-        <mesh position={[-2, 0, 0.55]} castShadow receiveShadow>
-          <boxGeometry args={[0.25, 2, 1]} />
-          <meshStandardMaterial color="#c08088" roughness={0.6} />
-          <Body isStatic />
-        </mesh>
-
-        <mesh position={[2, 0, 0.55]} castShadow receiveShadow>
-          <boxGeometry args={[0.25, 2, 1]} />
-          <meshStandardMaterial color="#8080c8" roughness={0.6} />
-          <Body isStatic />
-        </mesh>
+              <mesh position={[0, 0, 0]} receiveShadow>
+                <planeGeometry args={[15, 15]} />
+                <meshStandardMaterial color="#808080" roughness={0.6} />
+              </mesh>
+            </>
+          }
+        >
+          <StaticLevel />
+        </React.Suspense>
 
         <mesh position={[0, 2, 0.25]} castShadow receiveShadow>
           <boxGeometry args={[0.5, 0.5, 0.5]} />
@@ -94,29 +59,6 @@ export const MainStage: React.FC = () => {
           <meshStandardMaterial color="#80c880" roughness={0.9} />
           <Body />
         </mesh>
-
-        <mesh position={[-1.5, 0, 0.55]} castShadow receiveShadow>
-          <boxGeometry args={[0.25, 0.25, 0.25]} />
-          <meshStandardMaterial
-            color="#000000"
-            emissive={new THREE.Color('#ffff00')}
-            emissiveIntensity={3}
-          />
-        </mesh>
-
-        <pointLight
-          position={[-12, 12, 4]}
-          intensity={0.9}
-          color="#f0f0ff"
-          castShadow
-        />
-        <pointLight
-          position={[4, -8, 4]}
-          intensity={0.6}
-          color="#fffff0"
-          castShadow
-        />
-        <ambientLight color="#101010" />
       </group>
     </TopDownPhysics>
   );

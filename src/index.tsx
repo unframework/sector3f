@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import WebFont from 'webfontloader';
 import { Canvas } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
-import { Lightmap } from '@react-three/lightmap';
 import { PerspectiveCamera, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -44,9 +43,7 @@ const App: React.FC = () => {
         */}
 
         <React.Suspense fallback={null}>
-          <Lightmap>
-            <MainStage />
-          </Lightmap>
+          <MainStage />
         </React.Suspense>
 
         <EffectComposer>
