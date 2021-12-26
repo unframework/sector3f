@@ -3,6 +3,11 @@ import { createPortal, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { booleans, primitives, geometries } from '@jscad/modeling';
 
+// temp math helpers
+const tmpRoot = new THREE.Vector3();
+const tmpA = new THREE.Vector3();
+const tmpB = new THREE.Vector3();
+
 // @todo rejoin the split-up polygons (with matching plane only) to avoid seams
 function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
   const geometry = new THREE.BufferGeometry();
@@ -24,14 +29,22 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
   for (let i = 0; i < polys.length; i += 1) {
     const poly = polys[i];
     const vertices = poly.vertices;
-    const plane = (((poly as unknown) as Record<string, unknown>)
-      .plane as number[]) || [0, 0, 1]; // @todo typing
+
+    // get plane normal (not always available on polygon)
+    tmpRoot.fromArray(vertices[0]);
+    tmpA.fromArray(vertices[1]);
+    tmpB.fromArray(vertices[2]);
+    tmpA.sub(tmpRoot);
+    tmpB.sub(tmpRoot);
+    tmpRoot.crossVectors(tmpA, tmpB);
+    tmpRoot.normalize();
+
     const firstVertexIndex = vertexIndex;
 
     for (let j = 0; j < vertices.length; j += 1) {
       const vert = vertices[j];
       positionAttr.setXYZ(vertexIndex, vert[0], vert[1], vert[2]);
-      normalAttr.setXYZ(vertexIndex, plane[0], plane[1], plane[2]);
+      normalAttr.setXYZ(vertexIndex, tmpRoot.x, tmpRoot.y, tmpRoot.z);
 
       if (j >= 2) {
         indexAttr.setXYZ(
