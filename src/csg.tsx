@@ -8,6 +8,7 @@ const tmpRoot = new THREE.Vector3();
 const tmpA = new THREE.Vector3();
 const tmpB = new THREE.Vector3();
 
+// all the geometry normals are flipped to reflect the subtractive mode of boolean logic
 // @todo rejoin the split-up polygons (with matching plane only) to avoid seams
 function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
   const geometry = new THREE.BufferGeometry();
@@ -38,6 +39,7 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
     tmpB.sub(tmpRoot);
     tmpRoot.crossVectors(tmpA, tmpB);
     tmpRoot.normalize();
+    tmpRoot.multiplyScalar(-1); // flip the normal
 
     const firstVertexIndex = vertexIndex;
 
@@ -47,11 +49,12 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
       normalAttr.setXYZ(vertexIndex, tmpRoot.x, tmpRoot.y, tmpRoot.z);
 
       if (j >= 2) {
+        // use flipped normal order
         indexAttr.setXYZ(
           faceIndex,
           firstVertexIndex,
-          vertexIndex - 1,
-          vertexIndex
+          vertexIndex,
+          vertexIndex - 1
         );
         faceIndex += 1;
       }
@@ -69,18 +72,27 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
 
 const GeomContext = React.createContext<geometries.geom3.Geom3[]>([]);
 
-export type ShapeProps = {
-  type: 'cylinder';
-} & primitives.CylinderOptions;
+export type ShapeProps =
+  | ({
+      type: 'cuboid';
+    } & primitives.CuboidOptions)
+  | ({
+      type: 'cylinder';
+    } & primitives.CylinderOptions);
 export const Shape: React.FC<ShapeProps> = (props, ref) => {
   const parentList = useContext(GeomContext);
 
   const [geom] = useState(() => {
     switch (props.type) {
+      case 'cuboid':
+        return primitives.cuboid(props);
       case 'cylinder':
         return primitives.cylinder(props);
       default:
-        throw new Error('unknown shape type: ' + props.type);
+        throw new Error(
+          'unknown shape type: ' +
+            ((props as unknown) as Record<string, unknown>).type
+        );
     }
   });
 
@@ -150,7 +162,7 @@ export const CSGModel: React.FC = ({ children }) => {
   return (
     <>
       {geom && (
-        <mesh geometry={geom}>
+        <mesh geometry={geom} castShadow receiveShadow>
           <meshStandardMaterial color="#808080" />
         </mesh>
       )}
