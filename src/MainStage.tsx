@@ -5,7 +5,7 @@ import * as THREE from 'three';
 
 import { useWASD, useCameraLook } from './wasd';
 import { TopDownPhysics, Body, FPSBody } from './physics';
-import { CSGModel } from './csg';
+import { CSGModel, Op, Shape } from './csg';
 
 export const MainStage: React.FC = () => {
   const cameraRef = useRef<THREE.Camera | null>(null);
@@ -34,7 +34,24 @@ export const MainStage: React.FC = () => {
           <FPSBody radius={0.15} movement={wasdMovement} look={cameraLook} />
         </group>
 
-        <CSGModel />
+        <CSGModel>
+          <Op type="union">
+            <Shape
+              type="cylinder"
+              center={[0, 0, 1]}
+              height={1}
+              radius={1}
+              segments={4}
+            />
+            <Shape
+              type="cylinder"
+              center={[0, 0.5, 1.5]}
+              height={1}
+              radius={1}
+              segments={4}
+            />
+          </Op>
+        </CSGModel>
 
         <mesh position={[0, 0, 0]} receiveShadow>
           <planeGeometry args={[5, 5]} />

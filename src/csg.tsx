@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useMemo } from 'react';
+import React, { useState, useLayoutEffect, useMemo, useContext } from 'react';
 import * as THREE from 'three';
 import { booleans, primitives, geometries } from '@jscad/modeling';
 
@@ -23,8 +23,8 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
   for (let i = 0; i < polys.length; i += 1) {
     const poly = polys[i];
     const vertices = poly.vertices;
-    const plane = ((poly as unknown) as Record<string, unknown>)
-      .plane as number[]; // @todo typing
+    const plane = (((poly as unknown) as Record<string, unknown>)
+      .plane as number[]) || [0, 0, 1]; // @todo typing
     const firstVertexIndex = vertexIndex;
 
     for (let j = 0; j < vertices.length; j += 1) {
@@ -45,7 +45,6 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
       vertexIndex += 1;
     }
   }
-  console.log(vertexIndex, faceIndex);
 
   geometry.setIndex(indexAttr);
   geometry.setAttribute('position', positionAttr);
@@ -54,31 +53,84 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
   return geometry;
 }
 
-export const CSGModel: React.FC = () => {
-  const geom = useMemo(() => {
-    const csg = booleans.union(
-      primitives.cylinder({
-        center: [0, 0, 1],
-        height: 1,
-        radius: 1,
-        segments: 4
-      }),
-      primitives.cylinder({
-        center: [0, 0.5, 1.5],
-        height: 1,
-        radius: 1,
-        segments: 4
-      })
-    );
+const GeomContext = React.createContext<geometries.geom3.Geom3[]>([]);
 
-    const polys = csg.polygons;
-    // console.log('hi', polys);
-    return createBufferFromPolys(polys);
-  }, []);
+export type ShapeProps = {
+  type: 'cylinder';
+} & primitives.CylinderOptions;
+export const Shape: React.FC<ShapeProps> = (props, ref) => {
+  const parentList = useContext(GeomContext);
+
+  const [geom] = useState(() => {
+    switch (props.type) {
+      case 'cylinder':
+        return primitives.cylinder(props);
+      default:
+        throw new Error('unknown shape type: ' + props.type);
+    }
+  });
+
+  // @todo check if this is auto-disposed
+  const debugGeom = useMemo(() => createBufferFromPolys(geom.polygons), [geom]);
+
+  useLayoutEffect(() => {
+    // no cleanup needed
+    parentList.push(geom);
+  }, [geom]);
 
   return (
-    <mesh geometry={geom}>
-      <meshStandardMaterial color="#808080" />
+    <mesh geometry={debugGeom}>
+      <meshBasicMaterial color="#ff0000" wireframe depthTest={false} />
     </mesh>
+  );
+};
+
+export type OpProps = {
+  type: 'union' | 'subtract' | 'intersect';
+};
+export const Op: React.FC<OpProps> = ({ type, children }) => {
+  const parentList = useContext(GeomContext);
+
+  const [localList] = useState<geometries.geom3.Geom3[]>(() => []);
+  useLayoutEffect(() => {
+    switch (type) {
+      case 'union':
+        parentList.push(booleans.union(localList));
+        return;
+      case 'subtract':
+        parentList.push(booleans.subtract(localList));
+        return;
+      case 'intersect':
+        parentList.push(booleans.intersect(localList));
+        return;
+      default:
+        throw new Error('unknown op type: ' + type);
+    }
+  }, [parentList, localList]);
+
+  return (
+    <GeomContext.Provider value={localList}>{children}</GeomContext.Provider>
+  );
+};
+
+export const CSGModel: React.FC = ({ children }) => {
+  const [localList] = useState<geometries.geom3.Geom3[]>(() => []);
+  const [geom, setGeom] = useState<THREE.BufferGeometry | null>(null);
+
+  useLayoutEffect(() => {
+    // @todo use union?
+    setGeom(createBufferFromPolys(localList[0] ? localList[0].polygons : []));
+  }, [localList]);
+
+  return (
+    <>
+      {geom && (
+        <mesh geometry={geom}>
+          <meshStandardMaterial color="#808080" />
+        </mesh>
+      )}
+
+      <GeomContext.Provider value={localList}>{children}</GeomContext.Provider>
+    </>
   );
 };
