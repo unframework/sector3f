@@ -1,4 +1,5 @@
 import React, { useState, useLayoutEffect, useMemo, useContext } from 'react';
+import { createPortal, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { booleans, primitives, geometries } from '@jscad/modeling';
 
@@ -114,6 +115,11 @@ export const Op: React.FC<OpProps> = ({ type, children }) => {
 };
 
 export const CSGModel: React.FC = ({ children }) => {
+  const [debugScene] = useState(() => {
+    const scene = new THREE.Scene();
+    scene.name = 'CSG debug scene';
+    return scene;
+  });
   const [localList] = useState<geometries.geom3.Geom3[]>(() => []);
   const [geom, setGeom] = useState<THREE.BufferGeometry | null>(null);
 
@@ -121,6 +127,12 @@ export const CSGModel: React.FC = ({ children }) => {
     // @todo use union?
     setGeom(createBufferFromPolys(localList[0] ? localList[0].polygons : []));
   }, [localList]);
+
+  useFrame(({ gl, camera }) => {
+    gl.autoClear = false;
+    gl.render(debugScene, camera);
+    gl.autoClear = true;
+  }, 10);
 
   return (
     <>
@@ -130,7 +142,12 @@ export const CSGModel: React.FC = ({ children }) => {
         </mesh>
       )}
 
-      <GeomContext.Provider value={localList}>{children}</GeomContext.Provider>
+      {createPortal(
+        <GeomContext.Provider value={localList}>
+          {children}
+        </GeomContext.Provider>,
+        debugScene
+      )}
     </>
   );
 };
