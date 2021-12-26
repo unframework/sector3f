@@ -11,6 +11,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@flyover/box2d": "git://github.com/flyover/box2d.ts.git#4bea859",
+    "@jscad/modeling": "^2.7.0",
     "@react-three/drei": "^8.3.0",
     "@react-three/fiber": "^7.0.0",
     "@react-three/lightmap": "^0.0.3",
