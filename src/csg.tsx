@@ -1,7 +1,10 @@
 import React, { useState, useLayoutEffect, useMemo, useContext } from 'react';
 import { createPortal, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import * as b2 from '@flyover/box2d';
 import { booleans, primitives, geometries } from '@jscad/modeling';
+
+import { Body } from './physics';
 
 // temp math helpers
 const tmpNormal = new THREE.Vector3();
@@ -72,6 +75,51 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
   geometry.setAttribute('normal', normalAttr);
 
   return geometry;
+}
+
+function createFloorFromPolys(polys: geometries.poly3.Poly3[]) {
+  const floorPolygons: geometries.geom2.Geom2[] = [];
+  for (let i = 0; i < polys.length; i += 1) {
+    const poly = polys[i];
+    const vertices = poly.vertices;
+
+    // check plane normal and offset
+    computeNormal(vertices);
+    tmpNormal.multiplyScalar(-1); // flip the normal
+
+    if (
+      tmpNormal.x !== 0 ||
+      tmpNormal.y !== 0 ||
+      tmpNormal.z !== 1 ||
+      vertices[0][2] !== 0
+    ) {
+      continue;
+    }
+
+    // collect the polygon points in 2D
+    const points: [number, number][] = [];
+    for (let j = 0; j < vertices.length; j += 1) {
+      const vert = vertices[j];
+      points.push([vert[0], vert[1]]);
+    }
+
+    points.reverse(); // invert to make "additive", for union to work
+
+    floorPolygons.push(primitives.polygon({ points }));
+  }
+
+  // now combine everything into one
+  const combinedGeom = booleans.union(floorPolygons);
+  const outlines = geometries.geom2.toOutlines(combinedGeom);
+
+  const chain = new b2.ChainShape();
+  outlines.forEach(outline => {
+    const points = outline.map(vert => new b2.Vec2(vert[0], vert[1]));
+    points.reverse(); // invert back to subtractive mode
+
+    chain.CreateLoop(points);
+  });
+  return chain;
 }
 
 const GeomContext = React.createContext<geometries.geom3.Geom3[]>([]);
@@ -151,10 +199,13 @@ export const CSGModel: React.FC = ({ children }) => {
   });
   const [localList] = useState<geometries.geom3.Geom3[]>(() => []);
   const [geom, setGeom] = useState<THREE.BufferGeometry | null>(null);
+  const [shape, setShape] = useState<b2.Shape | null>(null);
 
   useLayoutEffect(() => {
     // @todo use union?
-    setGeom(createBufferFromPolys(localList[0] ? localList[0].polygons : []));
+    const polys = localList[0] ? localList[0].polygons : [];
+    setGeom(createBufferFromPolys(polys));
+    setShape(createFloorFromPolys(polys));
   }, [localList]);
 
   useFrame(({ gl, camera }) => {
@@ -168,6 +219,8 @@ export const CSGModel: React.FC = ({ children }) => {
       {geom && (
         <mesh geometry={geom} castShadow receiveShadow>
           <meshStandardMaterial color="#808080" />
+
+          {shape ? <Body initShape={() => shape} /> : null}
         </mesh>
       )}
 

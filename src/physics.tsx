@@ -251,9 +251,9 @@ export const FPSBody: React.FC<{
 
 export const Body: React.FC<{
   isStatic?: boolean;
-  init?: (world: b2.World) => b2.Body;
-}> = ({ isStatic, init }) => {
-  const initRef = useRef(init); // storing value only once
+  initShape?: () => b2.Shape;
+}> = ({ isStatic, initShape }) => {
+  const initShapeRef = useRef(initShape); // storing value only once
 
   const [parentObject, setParentObject] = useState<THREE.Object3D | null>(null);
   const groupRef = useRef<THREE.Object3D | null>(null);
@@ -277,14 +277,6 @@ export const Body: React.FC<{
     }
 
     const meshGeom = meshObject.geometry;
-    if (!(meshGeom instanceof THREE.BoxBufferGeometry)) {
-      throw new Error('must attach under ThreeJS mesh with BoxBufferGeometry');
-    }
-
-    console.log('attaching body to', meshObject);
-    setParentObject(meshObject);
-
-    // const body = init(world);
 
     const bodyDef = new b2.BodyDef();
     const fixDef = new b2.FixtureDef();
@@ -294,18 +286,31 @@ export const Body: React.FC<{
     bodyDef.position.y = meshObject.position.y;
     bodyDef.linearDamping = 1;
     bodyDef.angularDamping = 1;
-    const body = world.CreateBody(bodyDef);
 
-    const shape = new b2.PolygonShape();
-    // reduce by m_radius - the "polygon skin" width - to avoid gaps
-    shape.SetAsBox(
-      meshGeom.parameters.width / 2 - shape.m_radius,
-      meshGeom.parameters.height / 2 - shape.m_radius
-    );
-    fixDef.shape = shape;
     fixDef.density = 300.0;
     fixDef.friction = 0.8;
     fixDef.restitution = 0.0;
+
+    if (meshGeom instanceof THREE.BoxBufferGeometry) {
+      const shape = new b2.PolygonShape();
+      // reduce by m_radius - the "polygon skin" width - to avoid gaps
+      shape.SetAsBox(
+        meshGeom.parameters.width / 2 - shape.m_radius,
+        meshGeom.parameters.height / 2 - shape.m_radius
+      );
+      fixDef.shape = shape;
+    } else {
+      if (!initShapeRef.current) {
+        throw new Error('must specify shape init if not BoxBufferGeometry');
+      }
+
+      const shape = initShapeRef.current();
+      fixDef.shape = shape;
+    }
+
+    setParentObject(meshObject);
+
+    const body = world.CreateBody(bodyDef);
     body.CreateFixture(fixDef);
 
     const tuple: ListenerTuple | null = isStatic
