@@ -1,5 +1,5 @@
 import React, { useState, useLayoutEffect, useMemo, useContext } from 'react';
-import { createPortal, useFrame } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import * as b2 from '@flyover/box2d';
 import { booleans, primitives, geometries } from '@jscad/modeling';
@@ -124,7 +124,8 @@ function createFloorFromPolys(polys: geometries.poly3.Poly3[]) {
 
 const GeomContext = React.createContext<{
   geoms: geometries.geom3.Geom3[];
-}>({ geoms: [] });
+  debugScene: THREE.Scene;
+}>({ geoms: [], debugScene: new THREE.Scene() });
 
 export type ShapeProps =
   | ({
@@ -134,7 +135,7 @@ export type ShapeProps =
       type: 'cylinder';
     } & primitives.CylinderOptions);
 export const Shape: React.FC<ShapeProps> = (props, ref) => {
-  const { geoms } = useContext(GeomContext);
+  const { geoms, debugScene } = useContext(GeomContext);
 
   const [geom] = useState(() => {
     switch (props.type) {
@@ -151,28 +152,35 @@ export const Shape: React.FC<ShapeProps> = (props, ref) => {
   });
 
   // @todo check if this is auto-disposed
-  const debugGeom = useMemo(() => createBufferFromPolys(geom.polygons), [geom]);
 
   useLayoutEffect(() => {
     // no cleanup needed
     geoms.push(geom);
-  }, [geom]);
 
-  return (
-    <mesh geometry={debugGeom}>
-      <meshBasicMaterial color="#ff0000" wireframe depthTest={false} />
-    </mesh>
-  );
+    // also create a debug mesh
+    const debugGeom = createBufferFromPolys(geom.polygons);
+    const debugMesh = new THREE.Mesh();
+    debugMesh.geometry = debugGeom;
+    debugMesh.material = new THREE.MeshBasicMaterial({
+      color: '#ff0000',
+      wireframe: true,
+      depthTest: false
+    });
+    debugScene.add(debugMesh);
+  }, [geom, debugScene]);
+
+  return null;
 };
 
 export type OpProps = {
   type: 'union' | 'subtract' | 'intersect';
 };
 export const Op: React.FC<OpProps> = ({ type, children }) => {
-  const { geoms } = useContext(GeomContext);
+  const { geoms, debugScene } = useContext(GeomContext);
 
   const [localCtx] = useState(() => ({
-    geoms: [] as geometries.geom3.Geom3[]
+    geoms: [] as geometries.geom3.Geom3[],
+    debugScene
   }));
   useLayoutEffect(() => {
     switch (type) {
@@ -196,13 +204,9 @@ export const Op: React.FC<OpProps> = ({ type, children }) => {
 };
 
 export const CSGModel: React.FC = ({ children }) => {
-  const [debugScene] = useState(() => {
-    const scene = new THREE.Scene();
-    scene.name = 'CSG debug scene';
-    return scene;
-  });
   const [localCtx] = useState(() => ({
-    geoms: [] as geometries.geom3.Geom3[]
+    geoms: [] as geometries.geom3.Geom3[],
+    debugScene: new THREE.Scene()
   }));
   const [geom, setGeom] = useState<THREE.BufferGeometry | null>(null);
   const [shape, setShape] = useState<b2.Shape[] | null>(null);
@@ -216,7 +220,7 @@ export const CSGModel: React.FC = ({ children }) => {
 
   useFrame(({ gl, camera }) => {
     gl.autoClear = false;
-    gl.render(debugScene, camera);
+    gl.render(localCtx.debugScene, camera);
     gl.autoClear = true;
   }, 10);
 
@@ -231,12 +235,7 @@ export const CSGModel: React.FC = ({ children }) => {
         </mesh>
       )}
 
-      {createPortal(
-        <GeomContext.Provider value={localCtx}>
-          {children}
-        </GeomContext.Provider>,
-        debugScene
-      )}
+      <GeomContext.Provider value={localCtx}>{children}</GeomContext.Provider>
     </>
   );
 };
