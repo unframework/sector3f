@@ -1,9 +1,10 @@
-import React, { useState, useLayoutEffect, useMemo, useContext } from 'react';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import * as b2 from '@flyover/box2d';
-import { booleans, primitives, geometries } from '@jscad/modeling';
+import { booleans, primitives, geometries, transforms } from '@jscad/modeling';
 
+import { ThreeDummy } from './scene';
 import { Body } from './physics';
 
 // temp math helpers
@@ -127,6 +128,8 @@ const GeomContext = React.createContext<{
   debugScene: THREE.Scene;
 }>({ geoms: [], debugScene: new THREE.Scene() });
 
+const IDENTITY_MAT4 = new THREE.Matrix4();
+
 export type ShapeProps =
   | ({
       type: 'cuboid';
@@ -151,15 +154,23 @@ export const Shape: React.FC<ShapeProps> = (props, ref) => {
     }
   });
 
-  // @todo check if this is auto-disposed
+  const init = (obj3d: THREE.Object3D) => {
+    // get world transform
+    // @todo proper logic that respects CSG root transform
+    obj3d.updateWorldMatrix(true, false); // update parents as well
+    const transformed = obj3d.matrixWorld.equals(IDENTITY_MAT4)
+      ? geom
+      : transforms.transform(obj3d.matrixWorld.toArray(), geom);
 
-  useLayoutEffect(() => {
     // no cleanup needed
-    geoms.push(geom);
+    geoms.push(transformed);
 
     // also create a debug mesh
     const debugGeom = createBufferFromPolys(geom.polygons);
     const debugMesh = new THREE.Mesh();
+    debugMesh.matrix.copy(obj3d.matrixWorld);
+    debugMesh.matrixAutoUpdate = false;
+
     debugMesh.geometry = debugGeom;
     debugMesh.material = new THREE.MeshBasicMaterial({
       color: '#ff0000',
@@ -167,9 +178,9 @@ export const Shape: React.FC<ShapeProps> = (props, ref) => {
       depthTest: false
     });
     debugScene.add(debugMesh);
-  }, [geom, debugScene]);
+  };
 
-  return null;
+  return <ThreeDummy init={init} />;
 };
 
 export type OpProps = {
@@ -182,7 +193,7 @@ export const Op: React.FC<OpProps> = ({ type, children }) => {
     geoms: [] as geometries.geom3.Geom3[],
     debugScene
   }));
-  useLayoutEffect(() => {
+  useEffect(() => {
     switch (type) {
       case 'union':
         geoms.push(booleans.union(localCtx.geoms));
@@ -211,12 +222,12 @@ export const CSGModel: React.FC = ({ children }) => {
   const [geom, setGeom] = useState<THREE.BufferGeometry | null>(null);
   const [shape, setShape] = useState<b2.Shape[] | null>(null);
 
-  useLayoutEffect(() => {
+  const init = () => {
     // @todo use union?
     const polys = localCtx.geoms[0] ? localCtx.geoms[0].polygons : [];
     setGeom(createBufferFromPolys(polys));
     setShape(createFloorFromPolys(polys));
-  }, [localCtx]);
+  };
 
   useFrame(({ gl, camera }) => {
     gl.autoClear = false;
@@ -236,6 +247,7 @@ export const CSGModel: React.FC = ({ children }) => {
       )}
 
       <GeomContext.Provider value={localCtx}>{children}</GeomContext.Provider>
+      <ThreeDummy init={init} />
     </>
   );
 };
