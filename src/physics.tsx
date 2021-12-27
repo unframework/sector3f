@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useContext } from 'react';
 import * as b2 from '@flyover/box2d';
 import * as THREE from 'three';
 
+import { ThreeDummy } from './scene';
 // @todo avoid using globals
 import { g_debugDraw, g_camera } from './box2dDebugDraw';
 
@@ -157,28 +158,14 @@ export const FPSBody: React.FC<{
   const lookRef = useRef(look);
   lookRef.current = look;
 
-  const [parentObject, setParentObject] = useState<THREE.Object3D | null>(null);
-  const groupRef = useRef<THREE.Object3D | null>(null);
-
   const info = useContext(PhysicsContext);
   if (!info) {
     throw new Error('expecting b2.World');
   }
 
   // initialize the physics object
-  useEffect(() => {
+  const init = (fpsObject: THREE.Object3D) => {
     const { world, bodyUpdaters, bodyListeners } = info;
-
-    if (!groupRef.current) {
-      throw new Error('must attach to ThreeJS tree');
-    }
-
-    const fpsObject = groupRef.current.parent;
-    if (!fpsObject) {
-      throw new Error('must attach under ThreeJS object');
-    }
-
-    setParentObject(fpsObject);
 
     // computation helper
     const impulseTmp = new b2.Vec2(0, 0);
@@ -243,10 +230,9 @@ export const FPSBody: React.FC<{
         bodyListeners.splice(tupleIndex, 1);
       }
     };
-  }, [info]);
+  };
 
-  // if parentObject is known, then no need to render the group anymore
-  return parentObject ? null : <group ref={groupRef} />;
+  return <ThreeDummy init={init} />;
 };
 
 export const Body: React.FC<{
@@ -255,26 +241,18 @@ export const Body: React.FC<{
 }> = ({ isStatic, initShape }) => {
   const initShapeRef = useRef(initShape); // storing value only once
 
-  const [parentObject, setParentObject] = useState<THREE.Object3D | null>(null);
-  const groupRef = useRef<THREE.Object3D | null>(null);
-
   const info = useContext(PhysicsContext);
   if (!info) {
     throw new Error('expecting b2.World');
   }
 
   // initialize the physics object
-  useEffect(() => {
-    const { world, bodyListeners } = info;
-
-    if (!groupRef.current) {
-      throw new Error('must attach to ThreeJS tree');
-    }
-
-    const meshObject = groupRef.current.parent;
+  const init = (meshObject: THREE.Object3D) => {
     if (!(meshObject instanceof THREE.Mesh)) {
       throw new Error('must attach under ThreeJS mesh');
     }
+
+    const { world, bodyListeners } = info;
 
     const meshGeom = meshObject.geometry;
 
@@ -328,9 +306,6 @@ export const Body: React.FC<{
       bodyListeners.push(tuple);
     }
 
-    // notify rendering code to stop showing the dummy group
-    setParentObject(meshObject);
-
     // clean up
     return () => {
       world.DestroyBody(body);
@@ -344,8 +319,7 @@ export const Body: React.FC<{
         }
       }
     };
-  }, [isStatic, info]);
+  };
 
-  // if parentObject is known, then no need to render the group anymore
-  return parentObject ? null : <group ref={groupRef} />;
+  return <ThreeDummy init={init} />;
 };
