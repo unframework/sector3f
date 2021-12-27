@@ -122,7 +122,9 @@ function createFloorFromPolys(polys: geometries.poly3.Poly3[]) {
   });
 }
 
-const GeomContext = React.createContext<geometries.geom3.Geom3[]>([]);
+const GeomContext = React.createContext<{
+  geoms: geometries.geom3.Geom3[];
+}>({ geoms: [] });
 
 export type ShapeProps =
   | ({
@@ -132,7 +134,7 @@ export type ShapeProps =
       type: 'cylinder';
     } & primitives.CylinderOptions);
 export const Shape: React.FC<ShapeProps> = (props, ref) => {
-  const parentList = useContext(GeomContext);
+  const { geoms } = useContext(GeomContext);
 
   const [geom] = useState(() => {
     switch (props.type) {
@@ -153,7 +155,7 @@ export const Shape: React.FC<ShapeProps> = (props, ref) => {
 
   useLayoutEffect(() => {
     // no cleanup needed
-    parentList.push(geom);
+    geoms.push(geom);
   }, [geom]);
 
   return (
@@ -167,27 +169,29 @@ export type OpProps = {
   type: 'union' | 'subtract' | 'intersect';
 };
 export const Op: React.FC<OpProps> = ({ type, children }) => {
-  const parentList = useContext(GeomContext);
+  const { geoms } = useContext(GeomContext);
 
-  const [localList] = useState<geometries.geom3.Geom3[]>(() => []);
+  const [localCtx] = useState(() => ({
+    geoms: [] as geometries.geom3.Geom3[]
+  }));
   useLayoutEffect(() => {
     switch (type) {
       case 'union':
-        parentList.push(booleans.union(localList));
+        geoms.push(booleans.union(localCtx.geoms));
         return;
       case 'subtract':
-        parentList.push(booleans.subtract(localList));
+        geoms.push(booleans.subtract(localCtx.geoms));
         return;
       case 'intersect':
-        parentList.push(booleans.intersect(localList));
+        geoms.push(booleans.intersect(localCtx.geoms));
         return;
       default:
         throw new Error('unknown op type: ' + type);
     }
-  }, [parentList, localList]);
+  }, [geoms, localCtx]);
 
   return (
-    <GeomContext.Provider value={localList}>{children}</GeomContext.Provider>
+    <GeomContext.Provider value={localCtx}>{children}</GeomContext.Provider>
   );
 };
 
@@ -197,16 +201,18 @@ export const CSGModel: React.FC = ({ children }) => {
     scene.name = 'CSG debug scene';
     return scene;
   });
-  const [localList] = useState<geometries.geom3.Geom3[]>(() => []);
+  const [localCtx] = useState(() => ({
+    geoms: [] as geometries.geom3.Geom3[]
+  }));
   const [geom, setGeom] = useState<THREE.BufferGeometry | null>(null);
   const [shape, setShape] = useState<b2.Shape[] | null>(null);
 
   useLayoutEffect(() => {
     // @todo use union?
-    const polys = localList[0] ? localList[0].polygons : [];
+    const polys = localCtx.geoms[0] ? localCtx.geoms[0].polygons : [];
     setGeom(createBufferFromPolys(polys));
     setShape(createFloorFromPolys(polys));
-  }, [localList]);
+  }, [localCtx]);
 
   useFrame(({ gl, camera }) => {
     gl.autoClear = false;
@@ -226,7 +232,7 @@ export const CSGModel: React.FC = ({ children }) => {
       )}
 
       {createPortal(
-        <GeomContext.Provider value={localList}>
+        <GeomContext.Provider value={localCtx}>
           {children}
         </GeomContext.Provider>,
         debugScene
