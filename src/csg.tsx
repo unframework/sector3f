@@ -220,7 +220,8 @@ export const CSGModel: React.FC = ({ children }) => {
         <mesh geometry={geom} castShadow receiveShadow>
           <meshStandardMaterial color="#808080" />
 
-          {shape ? <Body initShape={() => shape} /> : null}
+          {/* static body ensures continuous collision detection is enabled, to avoid tunnelling */}
+          {shape ? <Body isStatic initShape={() => shape} /> : null}
         </mesh>
       )}
 
