@@ -13,7 +13,7 @@ export const StaticLevel: React.FC = () => {
         <Op type="union">
           <Op type="subtract">
             <Shape type="cuboid" center={[0, 0, 1]} size={[6, 6, 2]} />
-            <Shape type="cuboid" center={[-1, -1, 1]} size={[0.5, 0.5, 2]} />
+            <Shape type="cuboid" center={[-2, -2, 1]} size={[1, 1, 2]} />
           </Op>
           <Shape type="cuboid" center={[0, 4, 0.5]} size={[1, 2, 1]} />
         </Op>
@@ -34,17 +34,17 @@ export const StaticLevel: React.FC = () => {
 
       <pointLight
         position={[-2.5, 2.5, 1.8]}
-        intensity={0.8}
+        intensity={0.5}
         color="#f0f0ff"
         castShadow
       />
       <pointLight
-        position={[2.5, -2.5, 1.8]}
-        intensity={0.8}
+        position={[2.5, 2.5, 1.8]}
+        intensity={0.5}
         color="#fffff0"
         castShadow
       />
-      <ambientLight color="#101010" />
+      <ambientLight color="#202020" />
     </Lightmap>
   );
 };
