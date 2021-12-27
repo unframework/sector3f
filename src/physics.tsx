@@ -251,7 +251,7 @@ export const FPSBody: React.FC<{
 
 export const Body: React.FC<{
   isStatic?: boolean;
-  initShape?: () => b2.Shape;
+  initShape?: () => b2.Shape | b2.Shape[];
 }> = ({ isStatic, initShape }) => {
   const initShapeRef = useRef(initShape); // storing value only once
 
@@ -291,6 +291,8 @@ export const Body: React.FC<{
     fixDef.friction = 0.8;
     fixDef.restitution = 0.0;
 
+    // get set of shapes for this body
+    const shapes: b2.Shape[] = [];
     if (meshGeom instanceof THREE.BoxBufferGeometry) {
       const shape = new b2.PolygonShape();
       // reduce by m_radius - the "polygon skin" width - to avoid gaps
@@ -298,20 +300,26 @@ export const Body: React.FC<{
         meshGeom.parameters.width / 2 - shape.m_radius,
         meshGeom.parameters.height / 2 - shape.m_radius
       );
-      fixDef.shape = shape;
+      shapes.push(shape);
     } else {
       if (!initShapeRef.current) {
         throw new Error('must specify shape init if not BoxBufferGeometry');
       }
 
-      const shape = initShapeRef.current();
-      fixDef.shape = shape;
+      const customShapes = initShapeRef.current();
+      if (Array.isArray(customShapes)) {
+        shapes.push(...customShapes);
+      } else {
+        shapes.push(customShapes);
+      }
     }
 
-    setParentObject(meshObject);
-
+    // initialize the actual body object
     const body = world.CreateBody(bodyDef);
-    body.CreateFixture(fixDef);
+    shapes.forEach(shape => {
+      fixDef.shape = shape;
+      body.CreateFixture(fixDef);
+    });
 
     const tuple: ListenerTuple | null = isStatic
       ? null
@@ -319,6 +327,9 @@ export const Body: React.FC<{
     if (tuple) {
       bodyListeners.push(tuple);
     }
+
+    // notify rendering code to stop showing the dummy group
+    setParentObject(meshObject);
 
     // clean up
     return () => {

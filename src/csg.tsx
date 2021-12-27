@@ -112,14 +112,14 @@ function createFloorFromPolys(polys: geometries.poly3.Poly3[]) {
   const combinedGeom = booleans.union(floorPolygons);
   const outlines = geometries.geom2.toOutlines(combinedGeom);
 
-  const chain = new b2.ChainShape();
-  outlines.forEach(outline => {
+  return outlines.map(outline => {
     const points = outline.map(vert => new b2.Vec2(vert[0], vert[1]));
     points.reverse(); // invert back to subtractive mode
 
+    const chain = new b2.ChainShape();
     chain.CreateLoop(points);
+    return chain;
   });
-  return chain;
 }
 
 const GeomContext = React.createContext<geometries.geom3.Geom3[]>([]);
@@ -199,7 +199,7 @@ export const CSGModel: React.FC = ({ children }) => {
   });
   const [localList] = useState<geometries.geom3.Geom3[]>(() => []);
   const [geom, setGeom] = useState<THREE.BufferGeometry | null>(null);
-  const [shape, setShape] = useState<b2.Shape | null>(null);
+  const [shape, setShape] = useState<b2.Shape[] | null>(null);
 
   useLayoutEffect(() => {
     // @todo use union?

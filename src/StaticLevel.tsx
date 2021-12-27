@@ -11,7 +11,10 @@ export const StaticLevel: React.FC = () => {
     <Lightmap>
       <CSGModel>
         <Op type="union">
-          <Shape type="cuboid" center={[0, 0, 1]} size={[6, 6, 2]} />
+          <Op type="subtract">
+            <Shape type="cuboid" center={[0, 0, 1]} size={[6, 6, 2]} />
+            <Shape type="cuboid" center={[-1, -1, 1]} size={[0.5, 0.5, 2]} />
+          </Op>
           <Shape type="cuboid" center={[0, 4, 0.5]} size={[1, 2, 1]} />
         </Op>
       </CSGModel>
