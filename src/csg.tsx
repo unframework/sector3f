@@ -4,9 +4,19 @@ import * as THREE from 'three';
 import { booleans, primitives, geometries } from '@jscad/modeling';
 
 // temp math helpers
-const tmpRoot = new THREE.Vector3();
+const tmpNormal = new THREE.Vector3();
 const tmpA = new THREE.Vector3();
 const tmpB = new THREE.Vector3();
+
+function computeNormal(vertices: [number, number, number][]) {
+  tmpNormal.fromArray(vertices[0]);
+  tmpA.fromArray(vertices[1]);
+  tmpB.fromArray(vertices[2]);
+  tmpA.sub(tmpNormal);
+  tmpB.sub(tmpNormal);
+  tmpNormal.crossVectors(tmpA, tmpB);
+  tmpNormal.normalize();
+}
 
 // all the geometry normals are flipped to reflect the subtractive mode of boolean logic
 // @todo rejoin the split-up polygons (with matching plane only) to avoid seams
@@ -32,21 +42,15 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
     const vertices = poly.vertices;
 
     // get plane normal (not always available on polygon)
-    tmpRoot.fromArray(vertices[0]);
-    tmpA.fromArray(vertices[1]);
-    tmpB.fromArray(vertices[2]);
-    tmpA.sub(tmpRoot);
-    tmpB.sub(tmpRoot);
-    tmpRoot.crossVectors(tmpA, tmpB);
-    tmpRoot.normalize();
-    tmpRoot.multiplyScalar(-1); // flip the normal
+    computeNormal(vertices);
+    tmpNormal.multiplyScalar(-1); // flip the normal
 
     const firstVertexIndex = vertexIndex;
 
     for (let j = 0; j < vertices.length; j += 1) {
       const vert = vertices[j];
       positionAttr.setXYZ(vertexIndex, vert[0], vert[1], vert[2]);
-      normalAttr.setXYZ(vertexIndex, tmpRoot.x, tmpRoot.y, tmpRoot.z);
+      normalAttr.setXYZ(vertexIndex, tmpNormal.x, tmpNormal.y, tmpNormal.z);
 
       if (j >= 2) {
         // use flipped normal order
