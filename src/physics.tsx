@@ -204,7 +204,7 @@ export const FPSBody: React.FC<{
         impulseTmp.SelfRotate(yaw);
       }
 
-      impulseTmp.SelfMul(STEP * mass * 45);
+      impulseTmp.SelfMul(STEP * mass * 15);
       body.ApplyLinearImpulseToCenter(impulseTmp);
 
       // also move the debug view here
