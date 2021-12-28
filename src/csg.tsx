@@ -24,6 +24,42 @@ function computeNormal(vertices: [number, number, number][]) {
   tmpNormal.normalize();
 }
 
+const tmpUVCalc = new THREE.Matrix4();
+const uvMatrices = [
+  new THREE.Matrix4(),
+  new THREE.Matrix4(),
+  new THREE.Matrix4()
+];
+tmpUVCalc.lookAt(
+  new THREE.Vector3(0, 0, 0),
+  new THREE.Vector3(0, -1, 0),
+  new THREE.Vector3(-1, 0, 0)
+);
+uvMatrices[0].copy(tmpUVCalc);
+tmpUVCalc.lookAt(
+  new THREE.Vector3(0, 0, 0),
+  new THREE.Vector3(0, -1, 0),
+  new THREE.Vector3(0, 0, -1)
+);
+uvMatrices[1].copy(tmpUVCalc);
+tmpUVCalc.identity();
+uvMatrices[2].copy(tmpUVCalc);
+
+function getUVMatrix(normal: THREE.Vector3): THREE.Matrix4 {
+  let largestAxis = 0;
+  let largestAxisAbs = 0;
+  const elems = normal.toArray();
+  for (let axis = 0; axis < 3; axis += 1) {
+    const axisAbs = Math.abs(elems[axis]);
+    if (axisAbs > largestAxisAbs) {
+      largestAxis = axis;
+      largestAxisAbs = axisAbs;
+    }
+  }
+
+  return uvMatrices[largestAxis];
+}
+
 // all the geometry normals are flipped to reflect the subtractive mode of boolean logic
 // @todo rejoin the split-up polygons (with matching plane only) to avoid seams
 function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
@@ -40,6 +76,9 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
   indexAttr.count = faceCount * 3;
   const positionAttr = new THREE.Float32BufferAttribute(vertexCount * 3, 3);
   const normalAttr = new THREE.Float32BufferAttribute(vertexCount * 3, 3);
+  const uvAttr = new THREE.Float32BufferAttribute(vertexCount * 2, 2);
+
+  const tmpUV = new THREE.Vector3();
 
   let vertexIndex = 0;
   let faceIndex = 0;
@@ -57,6 +96,11 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
       const vert = vertices[j];
       positionAttr.setXYZ(vertexIndex, vert[0], vert[1], vert[2]);
       normalAttr.setXYZ(vertexIndex, tmpNormal.x, tmpNormal.y, tmpNormal.z);
+
+      const uvMatrix = getUVMatrix(tmpNormal);
+      tmpUV.set(vert[0], vert[1], vert[2]);
+      tmpUV.applyMatrix4(uvMatrix);
+      uvAttr.setXY(vertexIndex, tmpUV.x, tmpUV.y);
 
       if (j >= 2) {
         // use flipped normal order
@@ -76,6 +120,7 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
   geometry.setIndex(indexAttr);
   geometry.setAttribute('position', positionAttr);
   geometry.setAttribute('normal', normalAttr);
+  geometry.setAttribute('uv', uvAttr);
 
   return geometry;
 }
@@ -225,6 +270,9 @@ export const CSGModel: React.FC = ({ children }) => {
   const [shape, setShape] = useState<b2.Shape[] | null>(null);
 
   const testTexture = useLoader(THREE.TextureLoader, testTextureUrl);
+  testTexture.wrapS = THREE.RepeatWrapping;
+  testTexture.wrapT = THREE.RepeatWrapping;
+  testTexture.magFilter = THREE.NearestFilter;
 
   const init = () => {
     // @todo use union?
@@ -243,7 +291,7 @@ export const CSGModel: React.FC = ({ children }) => {
     <>
       {geom && (
         <mesh geometry={geom} castShadow receiveShadow>
-          <meshStandardMaterial color="#808080" map={testTexture} />
+          <meshStandardMaterial map={testTexture} />
 
           {/* static body ensures continuous collision detection is enabled, to avoid tunnelling */}
           {shape ? <Body isStatic initShape={() => shape} /> : null}
