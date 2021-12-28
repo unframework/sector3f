@@ -266,8 +266,8 @@ export const Body: React.FC<{
     bodyDef.type = isStatic ? b2.staticBody : b2.dynamicBody;
     bodyDef.position.x = meshObject.position.x;
     bodyDef.position.y = meshObject.position.y;
-    bodyDef.linearDamping = 1;
-    bodyDef.angularDamping = 1;
+    bodyDef.linearDamping = 5;
+    bodyDef.angularDamping = 5;
 
     fixDef.density = 300.0;
     fixDef.friction = 0.8;

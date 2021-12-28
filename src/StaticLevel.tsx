@@ -31,7 +31,7 @@ export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
 
 export const StaticLevel: React.FC = () => {
   return (
-    <Lightmap texelsPerUnit={4} samplerSettings={{ targetSize: 32 }}>
+    <Lightmap texelsPerUnit={2} samplerSettings={{ targetSize: 32 }}>
       <CSGModel>
         <Op type="union">
           <group position={[0.5, 0.5, 0]}>
@@ -44,7 +44,7 @@ export const StaticLevel: React.FC = () => {
             <Corridor color="#000000" />
           </group>
           <group position={[4.5, 4.5, 0]}>
-            <Corridor />
+            <Corridor color="#000000" />
           </group>
           <group position={[2.5, -1.5, 0]} rotation={[0, 0, Math.PI / 2]}>
             <Corridor />
@@ -57,6 +57,8 @@ export const StaticLevel: React.FC = () => {
           </group>
         </Op>
       </CSGModel>
+
+      <pointLight color="#f0f0ff" position={[3.25, 6.25, 0.125]} castShadow />
 
       <ambientLight color="#202020" />
     </Lightmap>
