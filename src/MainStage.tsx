@@ -23,7 +23,7 @@ export const MainStage: React.FC = () => {
   return (
     <TopDownPhysics>
       <group>
-        <group position={[0, -2, 0.5]}>
+        <group position={[0.5, -0.5, 0.5]}>
           <PerspectiveCamera
             near={0.075}
             far={100}
@@ -49,16 +49,16 @@ export const MainStage: React.FC = () => {
           <StaticLevel />
         </React.Suspense>
 
-        <mesh position={[0, 2, 0.25]} castShadow receiveShadow>
+        {/*<mesh position={[0, 2, 0.25]} castShadow receiveShadow>
           <boxGeometry args={[0.5, 0.5, 0.5]} />
           <meshStandardMaterial color="#c8c880" roughness={0.9} />
           <Body />
-        </mesh>
-        <mesh position={[1, 2, 0.5]} castShadow receiveShadow>
+        </mesh>*/}
+        {/*<mesh position={[1, 2, 0.5]} castShadow receiveShadow>
           <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial color="#80c880" roughness={0.9} />
           <Body />
-        </mesh>
+        </mesh>*/}
       </group>
     </TopDownPhysics>
   );

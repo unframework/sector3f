@@ -277,7 +277,10 @@ export const Op: React.FC<OpProps> = ({ type, children }) => {
   );
 };
 
-export const CSGModel: React.FC = ({ children }) => {
+export const CSGModel: React.FC<{ debug?: boolean }> = ({
+  debug,
+  children
+}) => {
   const [localCtx] = useState(() => ({
     geoms: [] as geometries.geom3.Geom3[],
     debugScene: new THREE.Scene()
@@ -298,6 +301,10 @@ export const CSGModel: React.FC = ({ children }) => {
   };
 
   useFrame(({ gl, camera }) => {
+    if (!debug) {
+      return;
+    }
+
     gl.autoClear = false;
     gl.render(localCtx.debugScene, camera);
     gl.autoClear = true;
