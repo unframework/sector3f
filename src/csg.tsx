@@ -7,7 +7,8 @@ import { booleans, primitives, geometries, transforms } from '@jscad/modeling';
 import { ThreeDummy } from './scene';
 import { Body } from './physics';
 
-import testTextureUrl from './BIGSQUARES.png';
+// texture from https://opengameart.org/content/metalstone-textures by Spiney
+import testTextureUrl from './ft_conc01_c.png';
 
 // temp math helpers
 const tmpNormal = new THREE.Vector3();
@@ -113,6 +114,7 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
 
       const uvMatrix = getUVMatrix(tmpNormal);
       tmpUV.set(vert[0], vert[1], vert[2]);
+      tmpUV.multiplyScalar(0.25);
       tmpUV.applyMatrix4(uvMatrix);
       uvAttr.setXY(vertexIndex, tmpUV.x, tmpUV.y);
 
@@ -286,7 +288,7 @@ export const CSGModel: React.FC = ({ children }) => {
   const testTexture = useLoader(THREE.TextureLoader, testTextureUrl);
   testTexture.wrapS = THREE.RepeatWrapping;
   testTexture.wrapT = THREE.RepeatWrapping;
-  testTexture.magFilter = THREE.NearestFilter;
+  // testTexture.magFilter = THREE.NearestFilter;
 
   const init = () => {
     // @todo use union?
