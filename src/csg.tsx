@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo, useContext } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
 import * as b2 from '@flyover/box2d';
 import { booleans, primitives, geometries, transforms } from '@jscad/modeling';
 
 import { ThreeDummy } from './scene';
 import { Body } from './physics';
+
+import testTextureUrl from './BIGSQUARES.png';
 
 // temp math helpers
 const tmpNormal = new THREE.Vector3();
@@ -222,6 +224,8 @@ export const CSGModel: React.FC = ({ children }) => {
   const [geom, setGeom] = useState<THREE.BufferGeometry | null>(null);
   const [shape, setShape] = useState<b2.Shape[] | null>(null);
 
+  const testTexture = useLoader(THREE.TextureLoader, testTextureUrl);
+
   const init = () => {
     // @todo use union?
     const polys = localCtx.geoms[0] ? localCtx.geoms[0].polygons : [];
@@ -239,7 +243,7 @@ export const CSGModel: React.FC = ({ children }) => {
     <>
       {geom && (
         <mesh geometry={geom} castShadow receiveShadow>
-          <meshStandardMaterial color="#808080" />
+          <meshStandardMaterial color="#808080" map={testTexture} />
 
           {/* static body ensures continuous collision detection is enabled, to avoid tunnelling */}
           {shape ? <Body isStatic initShape={() => shape} /> : null}
