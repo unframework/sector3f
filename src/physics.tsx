@@ -206,6 +206,10 @@ export const FPSBody: React.FC<{
 
       impulseTmp.SelfMul(STEP * mass * 45);
       body.ApplyLinearImpulseToCenter(impulseTmp);
+
+      // also move the debug view here
+      g_camera.m_center.x += (body.GetPosition().x - g_camera.m_center.x) * 0.1;
+      g_camera.m_center.y += (body.GetPosition().y - g_camera.m_center.y) * 0.1;
     };
     bodyUpdaters.push(updater);
 
