@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useContext } from 'react';
+import React, {
+  useState,
+  useLayoutEffect,
+  useMemo,
+  useContext,
+  useRef
+} from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
 import * as b2 from '@flyover/box2d';
@@ -256,7 +262,7 @@ export const Op: React.FC<OpProps> = ({ type, children }) => {
     geoms: [] as geometries.geom3.Geom3[],
     debugScene
   }));
-  useEffect(() => {
+  useLayoutEffect(() => {
     switch (type) {
       case 'union':
         geoms.push(booleans.union(localCtx.geoms));
@@ -277,10 +283,15 @@ export const Op: React.FC<OpProps> = ({ type, children }) => {
   );
 };
 
-export const CSGModel: React.FC<{ debug?: boolean }> = ({
+export const CSGModel: React.FC<{ onReady?: () => void; debug?: boolean }> = ({
+  onReady,
   debug,
   children
 }) => {
+  // avoid re-triggering effect
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
+
   const [localCtx] = useState(() => ({
     geoms: [] as geometries.geom3.Geom3[],
     debugScene: new THREE.Scene()
@@ -293,12 +304,22 @@ export const CSGModel: React.FC<{ debug?: boolean }> = ({
   testTexture.wrapT = THREE.RepeatWrapping;
   // testTexture.magFilter = THREE.NearestFilter;
 
-  const init = () => {
+  // perform conversion from CSG volumes to mesh
+  useLayoutEffect(() => {
     // @todo use union?
     const polys = localCtx.geoms[0] ? localCtx.geoms[0].polygons : [];
     setGeom(createBufferFromPolys(polys));
     setShape(createFloorFromPolys(polys));
-  };
+  }, []);
+
+  // notify once mesh geometry is rendered out
+  useLayoutEffect(() => {
+    if (geom) {
+      if (onReadyRef.current) {
+        onReadyRef.current();
+      }
+    }
+  }, [geom]);
 
   useFrame(({ gl, camera }) => {
     if (!debug) {
@@ -322,7 +343,6 @@ export const CSGModel: React.FC<{ debug?: boolean }> = ({
       )}
 
       <GeomContext.Provider value={localCtx}>{children}</GeomContext.Provider>
-      <ThreeDummy init={init} />
     </>
   );
 };

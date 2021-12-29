@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MeshReflectorMaterial } from '@react-three/drei';
 import { Lightmap } from '@react-three/lightmap';
 import * as THREE from 'three';
@@ -30,9 +30,14 @@ export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
 };
 
 export const StaticLevel: React.FC = () => {
+  const [lightmapActive, setLightmapActive] = useState(false);
   return (
-    <Lightmap texelsPerUnit={2} samplerSettings={{ targetSize: 32 }}>
-      <CSGModel>
+    <Lightmap
+      disabled={!lightmapActive}
+      texelsPerUnit={2}
+      samplerSettings={{ targetSize: 32 }}
+    >
+      <CSGModel onReady={() => setLightmapActive(true)}>
         <Op type="union">
           <group position={[0.5, 0.5, 0]}>
             <Corridor />

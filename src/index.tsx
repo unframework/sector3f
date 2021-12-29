@@ -19,7 +19,6 @@ const App: React.FC = () => {
   return (
     <>
       <Canvas
-        mode="legacy"
         shadows
         style={{ height: '100vh' }}
         gl={{

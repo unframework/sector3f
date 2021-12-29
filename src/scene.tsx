@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext } from 'react';
+import React, { useState, useRef, useLayoutEffect, useContext } from 'react';
 import * as THREE from 'three';
 
 // helper scene object that reads the parent object reference
@@ -11,7 +11,7 @@ export const ThreeDummy: React.FC<{
   const groupRef = useRef<THREE.Object3D | null>(null);
 
   // @todo consider layout effect?
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!groupRef.current) {
       throw new Error('must attach to ThreeJS tree');
     }
