@@ -1,10 +1,13 @@
-import React, { useImperativeHandle } from 'react';
+import React, { useState } from 'react';
 import { booleans, primitives, geometries } from '@jscad/modeling';
 import { useFrame } from '@react-three/fiber';
+import { Lightmap } from '@react-three/lightmap';
 import * as THREE from 'three';
 import * as b2 from '@flyover/box2d';
 
 import { Body } from './physics';
+import { CSGModel } from './csg';
+import { applyUVProjection } from './uvProjection';
 
 // temp math helpers
 const tmpNormal = new THREE.Vector3();
@@ -21,11 +24,7 @@ function computeNormal(vertices: [number, number, number][]) {
   tmpNormal.normalize();
 }
 
-export interface FloorInstance {
-  query(): void;
-}
-
-export function createFloorFromVolume(volume: geometries.geom3.Geom3) {
+function createFloorFromVolume(volume: geometries.geom3.Geom3) {
   const polys = volume.polygons;
 
   // set up a world used just for querying the polygons in 2D
@@ -94,18 +93,12 @@ export function createFloorFromVolume(volume: geometries.geom3.Geom3) {
 
   // return a ready-to-go component
   // @todo deference input data for better memory usage?
-  const Floor = React.forwardRef<FloorInstance>((_props, ref) => {
+  const Floor: React.FC = () => {
     useFrame(({ gl, camera }) => {
       gl.autoClear = false;
       gl.render(debugScene, camera);
       gl.autoClear = true;
     }, 20);
-
-    useImperativeHandle(ref, () => ({
-      query() {
-        console.log('query!');
-      }
-    }));
 
     return (
       <Body
@@ -113,7 +106,34 @@ export function createFloorFromVolume(volume: geometries.geom3.Geom3) {
         initShape={() => shape}
       />
     );
-  });
+  };
 
   return <Floor />;
 }
+
+export const LevelMesh: React.FC = ({ children }) => {
+  const [floorBody, setFloorBody] = useState<React.ReactElement | null>(null);
+  const [lightmapActive, setLightmapActive] = useState(false);
+
+  return (
+    <Lightmap
+      disabled={!lightmapActive}
+      texelsPerUnit={2}
+      samplerSettings={{ targetSize: 32 }}
+    >
+      <CSGModel
+        onReady={(geometry, volume) => {
+          // add our own extra UV logic
+          applyUVProjection(geometry);
+          setFloorBody(createFloorFromVolume(volume));
+
+          setLightmapActive(true);
+        }}
+      >
+        {children}
+
+        {floorBody}
+      </CSGModel>
+    </Lightmap>
+  );
+};
