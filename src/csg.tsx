@@ -31,56 +31,6 @@ function computeNormal(vertices: [number, number, number][]) {
   tmpNormal.normalize();
 }
 
-const tmpUVCalc = new THREE.Matrix4();
-const uvMatrices = [
-  // positive direction X, Y, Z
-  new THREE.Matrix4(),
-  new THREE.Matrix4(),
-  new THREE.Matrix4(),
-  // negative direction X, Y, Z
-  new THREE.Matrix4(),
-  new THREE.Matrix4(),
-  new THREE.Matrix4()
-];
-
-// fill positive directions
-tmpUVCalc.lookAt(
-  new THREE.Vector3(0, 0, 0),
-  new THREE.Vector3(0, -1, 0),
-  new THREE.Vector3(1, 0, 0)
-);
-uvMatrices[0].copy(tmpUVCalc);
-tmpUVCalc.lookAt(
-  new THREE.Vector3(0, 0, 0),
-  new THREE.Vector3(0, -1, 0),
-  new THREE.Vector3(0, 0, 1)
-);
-uvMatrices[1].copy(tmpUVCalc);
-tmpUVCalc.identity();
-uvMatrices[2].copy(tmpUVCalc);
-
-// fill negative directions
-uvMatrices[3].copy(uvMatrices[0]);
-uvMatrices[3].scale(new THREE.Vector3(1, -1, 1));
-uvMatrices[4].copy(uvMatrices[1]);
-uvMatrices[4].scale(new THREE.Vector3(-1, 1, 1));
-uvMatrices[5].copy(uvMatrices[2]); // unchanged
-
-function getUVMatrix(normal: THREE.Vector3): THREE.Matrix4 {
-  let largestAxis = 0;
-  let largestAxisAbs = 0;
-  const elems = normal.toArray();
-  for (let axis = 0; axis < 3; axis += 1) {
-    const axisAbs = Math.abs(elems[axis]);
-    if (axisAbs > largestAxisAbs) {
-      largestAxis = axis;
-      largestAxisAbs = axisAbs;
-    }
-  }
-
-  return uvMatrices[largestAxis + (elems[largestAxis] >= 0 ? 0 : 3)];
-}
-
 // all the geometry normals are flipped to reflect the subtractive mode of boolean logic
 // @todo rejoin the split-up polygons (with matching plane only) to avoid seams
 function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
@@ -94,12 +44,9 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
   }
 
   const indexAttr = new THREE.Uint16BufferAttribute(faceCount * 3, 3);
-  indexAttr.count = faceCount * 3;
+  indexAttr.count = faceCount * 3; // this seems to be necessary for correct display?
   const positionAttr = new THREE.Float32BufferAttribute(vertexCount * 3, 3);
   const normalAttr = new THREE.Float32BufferAttribute(vertexCount * 3, 3);
-  const uvAttr = new THREE.Float32BufferAttribute(vertexCount * 2, 2);
-
-  const tmpUV = new THREE.Vector3();
 
   let vertexIndex = 0;
   let faceIndex = 0;
@@ -117,12 +64,6 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
       const vert = vertices[j];
       positionAttr.setXYZ(vertexIndex, vert[0], vert[1], vert[2]);
       normalAttr.setXYZ(vertexIndex, tmpNormal.x, tmpNormal.y, tmpNormal.z);
-
-      const uvMatrix = getUVMatrix(tmpNormal);
-      tmpUV.set(vert[0], vert[1], vert[2]);
-      tmpUV.multiplyScalar(0.25);
-      tmpUV.applyMatrix4(uvMatrix);
-      uvAttr.setXY(vertexIndex, tmpUV.x, tmpUV.y);
 
       if (j >= 2) {
         // use flipped normal order
@@ -142,7 +83,6 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
   geometry.setIndex(indexAttr);
   geometry.setAttribute('position', positionAttr);
   geometry.setAttribute('normal', normalAttr);
-  geometry.setAttribute('uv', uvAttr);
 
   return geometry;
 }
@@ -283,11 +223,10 @@ export const Op: React.FC<OpProps> = ({ type, children }) => {
   );
 };
 
-export const CSGModel: React.FC<{ onReady?: () => void; debug?: boolean }> = ({
-  onReady,
-  debug,
-  children
-}) => {
+export const CSGModel: React.FC<{
+  onReady?: (geom: THREE.BufferGeometry) => void;
+  debug?: boolean;
+}> = ({ onReady, debug, children }) => {
   // avoid re-triggering effect
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
@@ -308,18 +247,15 @@ export const CSGModel: React.FC<{ onReady?: () => void; debug?: boolean }> = ({
   useLayoutEffect(() => {
     // @todo use union?
     const polys = localCtx.geoms[0] ? localCtx.geoms[0].polygons : [];
-    setGeom(createBufferFromPolys(polys));
+    const geom = createBufferFromPolys(polys);
+    setGeom(geom);
     setShape(createFloorFromPolys(polys));
-  }, []);
 
-  // notify once mesh geometry is rendered out
-  useLayoutEffect(() => {
-    if (geom) {
-      if (onReadyRef.current) {
-        onReadyRef.current();
-      }
+    // notify in time for the next render cycle
+    if (onReadyRef.current) {
+      onReadyRef.current(geom);
     }
-  }, [geom]);
+  }, []);
 
   useFrame(({ gl, camera }) => {
     if (!debug) {

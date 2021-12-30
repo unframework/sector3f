@@ -5,6 +5,7 @@ import * as THREE from 'three';
 
 import { Body } from './physics';
 import { CSGModel, Op, Shape } from './csg';
+import { applyUVProjection } from './uvProjection';
 
 export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
   return (
@@ -37,7 +38,14 @@ export const StaticLevel: React.FC = () => {
       texelsPerUnit={2}
       samplerSettings={{ targetSize: 32 }}
     >
-      <CSGModel onReady={() => setLightmapActive(true)}>
+      <CSGModel
+        onReady={geometry => {
+          // add our own extra UV logic
+          applyUVProjection(geometry);
+
+          setLightmapActive(true);
+        }}
+      >
         <Op type="union">
           <group position={[0.5, 0.5, 0]}>
             <Corridor />
