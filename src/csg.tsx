@@ -7,11 +7,9 @@ import React, {
 } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
-import * as b2 from '@flyover/box2d';
 import { booleans, primitives, geometries, transforms } from '@jscad/modeling';
 
 import { ThreeDummy } from './scene';
-import { Body } from './physics';
 
 // texture from https://opengameart.org/content/metalstone-textures by Spiney
 import testTextureUrl from './ft_conc01_c.png';
@@ -85,51 +83,6 @@ function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
   geometry.setAttribute('normal', normalAttr);
 
   return geometry;
-}
-
-function createFloorFromPolys(polys: geometries.poly3.Poly3[]) {
-  const floorPolygons: geometries.geom2.Geom2[] = [];
-  for (let i = 0; i < polys.length; i += 1) {
-    const poly = polys[i];
-    const vertices = poly.vertices;
-
-    // check plane normal and offset
-    computeNormal(vertices);
-    tmpNormal.multiplyScalar(-1); // flip the normal
-
-    if (
-      tmpNormal.x !== 0 ||
-      tmpNormal.y !== 0 ||
-      tmpNormal.z !== 1 ||
-      vertices[0][2] !== 0
-    ) {
-      continue;
-    }
-
-    // collect the polygon points in 2D
-    const points: [number, number][] = [];
-    for (let j = 0; j < vertices.length; j += 1) {
-      const vert = vertices[j];
-      points.push([vert[0], vert[1]]);
-    }
-
-    points.reverse(); // invert to make "additive", for union to work
-
-    floorPolygons.push(primitives.polygon({ points }));
-  }
-
-  // now combine everything into one
-  const combinedGeom = booleans.union(floorPolygons);
-  const outlines = geometries.geom2.toOutlines(combinedGeom);
-
-  return outlines.map(outline => {
-    const points = outline.map(vert => new b2.Vec2(vert[0], vert[1]));
-    points.reverse(); // invert back to subtractive mode
-
-    const chain = new b2.ChainShape();
-    chain.CreateLoop(points);
-    return chain;
-  });
 }
 
 const GeomContext = React.createContext<{
@@ -224,7 +177,10 @@ export const Op: React.FC<OpProps> = ({ type, children }) => {
 };
 
 export const CSGModel: React.FC<{
-  onReady?: (geom: THREE.BufferGeometry) => void;
+  onReady?: (
+    geom: THREE.BufferGeometry,
+    volume: geometries.geom3.Geom3
+  ) => void;
   debug?: boolean;
 }> = ({ onReady, debug, children }) => {
   // avoid re-triggering effect
@@ -236,7 +192,6 @@ export const CSGModel: React.FC<{
     debugScene: new THREE.Scene()
   }));
   const [geom, setGeom] = useState<THREE.BufferGeometry | null>(null);
-  const [shape, setShape] = useState<b2.Shape[] | null>(null);
 
   const testTexture = useLoader(THREE.TextureLoader, testTextureUrl);
   testTexture.wrapS = THREE.RepeatWrapping;
@@ -246,14 +201,17 @@ export const CSGModel: React.FC<{
   // perform conversion from CSG volumes to mesh
   useLayoutEffect(() => {
     // @todo use union?
-    const polys = localCtx.geoms[0] ? localCtx.geoms[0].polygons : [];
-    const geom = createBufferFromPolys(polys);
+    const volume = localCtx.geoms[0];
+    if (!volume) {
+      throw new Error('expected CSG volume result');
+    }
+
+    const geom = createBufferFromPolys(volume.polygons);
     setGeom(geom);
-    setShape(createFloorFromPolys(polys));
 
     // notify in time for the next render cycle
     if (onReadyRef.current) {
-      onReadyRef.current(geom);
+      onReadyRef.current(geom, volume);
     }
   }, []);
 
@@ -268,17 +226,10 @@ export const CSGModel: React.FC<{
   }, 10);
 
   return (
-    <>
-      {geom && (
-        <mesh geometry={geom} castShadow receiveShadow>
-          <meshStandardMaterial map={testTexture} />
-
-          {/* static body ensures continuous collision detection is enabled, to avoid tunnelling */}
-          {shape ? <Body isStatic initShape={() => shape} /> : null}
-        </mesh>
-      )}
+    <mesh geometry={geom || undefined} castShadow receiveShadow>
+      <meshStandardMaterial map={testTexture} />
 
       <GeomContext.Provider value={localCtx}>{children}</GeomContext.Provider>
-    </>
+    </mesh>
   );
 };

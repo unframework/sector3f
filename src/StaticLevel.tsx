@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { Body } from './physics';
 import { CSGModel, Op, Shape } from './csg';
 import { applyUVProjection } from './uvProjection';
+import { createFloorFromVolume } from './levelPhysics';
 
 export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
   return (
@@ -31,7 +32,9 @@ export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
 };
 
 export const StaticLevel: React.FC = () => {
+  const [floorBody, setFloorBody] = useState<React.ReactElement | null>(null);
   const [lightmapActive, setLightmapActive] = useState(false);
+
   return (
     <Lightmap
       disabled={!lightmapActive}
@@ -39,9 +42,10 @@ export const StaticLevel: React.FC = () => {
       samplerSettings={{ targetSize: 32 }}
     >
       <CSGModel
-        onReady={geometry => {
+        onReady={(geometry, volume) => {
           // add our own extra UV logic
           applyUVProjection(geometry);
+          setFloorBody(createFloorFromVolume(volume));
 
           setLightmapActive(true);
         }}
@@ -69,6 +73,8 @@ export const StaticLevel: React.FC = () => {
             <Corridor color="#000000" />
           </group>
         </Op>
+
+        {floorBody}
       </CSGModel>
 
       <pointLight color="#f0f0ff" position={[3.25, 6.25, 0.125]} castShadow />
