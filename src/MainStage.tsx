@@ -5,9 +5,12 @@ import * as THREE from 'three';
 
 import { useWASD, useCameraLook } from './wasd';
 import { TopDownPhysics, Body, FPSBody } from './physics';
+import { FloorInstance } from './levelPhysics';
 import { StaticLevel } from './StaticLevel';
 
 export const MainStage: React.FC = () => {
+  const floorRef = useRef<FloorInstance | null>(null);
+
   const cameraRef = useRef<THREE.Camera | null>(null);
   const cameraLook = useCameraLook(({ yaw, pitch }) => {
     if (!cameraRef.current) {
@@ -19,6 +22,17 @@ export const MainStage: React.FC = () => {
     );
   });
   const wasdMovement = useWASD();
+
+  useLayoutEffect(() => {
+    setTimeout(() => {
+      if (!floorRef.current) {
+        console.log('no floor ref');
+        return;
+      }
+
+      floorRef.current.query();
+    }, 200);
+  }, []);
 
   return (
     <TopDownPhysics>
@@ -46,7 +60,7 @@ export const MainStage: React.FC = () => {
             </>
           }
         >
-          <StaticLevel />
+          <StaticLevel floorRef={floorRef} />
         </React.Suspense>
 
         <mesh position={[1.75, 6.5, 0.2]} castShadow receiveShadow>

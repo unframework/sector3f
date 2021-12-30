@@ -3,10 +3,9 @@ import { MeshReflectorMaterial } from '@react-three/drei';
 import { Lightmap } from '@react-three/lightmap';
 import * as THREE from 'three';
 
-import { Body } from './physics';
 import { CSGModel, Op, Shape } from './csg';
 import { applyUVProjection } from './uvProjection';
-import { createFloorFromVolume } from './levelPhysics';
+import { createFloorFromVolume, FloorInstance } from './levelPhysics';
 
 export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
   return (
@@ -31,7 +30,9 @@ export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
   );
 };
 
-export const StaticLevel: React.FC = () => {
+export const StaticLevel: React.FC<{
+  floorRef: React.MutableRefObject<FloorInstance | null>;
+}> = ({ floorRef }) => {
   const [floorBody, setFloorBody] = useState<React.ReactElement | null>(null);
   const [lightmapActive, setLightmapActive] = useState(false);
 
@@ -74,7 +75,7 @@ export const StaticLevel: React.FC = () => {
           </group>
         </Op>
 
-        {floorBody}
+        {floorBody && React.cloneElement(floorBody, { ref: floorRef })}
       </CSGModel>
 
       <pointLight color="#f0f0ff" position={[3.25, 6.25, 0.125]} castShadow />
