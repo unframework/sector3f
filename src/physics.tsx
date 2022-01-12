@@ -153,9 +153,10 @@ export const TopDownPhysics: React.FC = ({ children }) => {
         target.position.x = bodyPos.x;
         target.position.y = bodyPos.y;
         if (zPos !== null) {
-          // apply basic smoothing for retro stair-step feel
+          // apply basic smoothing for retro stair-step feel for large Z changes
           const targetZ = zPos + zOffset;
-          target.position.z += (targetZ - target.position.z) * 0.25;
+          const delta = targetZ - target.position.z;
+          target.position.z += Math.abs(delta) < 0.05 ? delta : delta * 0.25;
         }
         target.quaternion.setFromAxisAngle(upVector, body.GetAngle());
         target.matrixWorldNeedsUpdate = true;

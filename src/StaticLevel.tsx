@@ -30,7 +30,7 @@ export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
 
 export const StaticLevel: React.FC = () => {
   const rampMatrix = new THREE.Matrix4();
-  rampMatrix.makeShear(0, 0.3, 0, 0, 0, 0);
+  rampMatrix.makeShear(0, 1, 0, 0, 0, 0);
 
   return (
     <>
