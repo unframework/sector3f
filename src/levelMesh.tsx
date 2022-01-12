@@ -28,6 +28,7 @@ function createFloorFromVolume(volume: geometries.geom3.Geom3) {
   const polys = volume.polygons;
 
   // set up a world used just for querying the polygons in 2D
+  // @todo plug in Z-query to the containing physics context
   const queryWorld = new b2.World(new b2.Vec2(0, 0));
   const queryBodyDef = new b2.BodyDef();
   queryBodyDef.type = b2.staticBody;

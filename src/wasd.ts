@@ -1,9 +1,12 @@
 import { useState, useLayoutEffect, useRef } from 'react';
 
+// X-axis, Y-axis, sprint
+export type WASDState = [number, number, boolean];
+
 // exposes an object that gets updated imperatively, meant for polling
-export function useWASD(): [number, number] {
+export function useWASD(): WASDState {
   // not actually using state changes
-  const [state] = useState<[number, number]>(() => [0, 0]);
+  const [state] = useState<WASDState>(() => [0, 0, false]);
 
   useLayoutEffect(() => {
     const keys: Record<string, boolean | undefined> = {};
@@ -11,6 +14,7 @@ export function useWASD(): [number, number] {
     function recomputeState() {
       state[0] = (keys.a ? -1 : 0) + (keys.d ? 1 : 0);
       state[1] = (keys.s ? -1 : 0) + (keys.w ? 1 : 0);
+      state[2] = !!keys.shift;
     }
 
     // key listener
@@ -21,6 +25,7 @@ export function useWASD(): [number, number] {
         case 'd':
         case 'w':
         case 's':
+        case 'shift':
           keys[key] = modeDown;
           recomputeState();
           break;

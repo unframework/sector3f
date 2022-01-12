@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useContext } from 'react';
 import * as b2 from '@flyover/box2d';
 import * as THREE from 'three';
 
+import { WASDState } from './wasd';
 import { ThreeDummy } from './scene';
 // @todo avoid using globals
 import { g_debugDraw, g_camera } from './box2dDebugDraw';
@@ -146,7 +147,7 @@ export const TopDownPhysics: React.FC = ({ children }) => {
 // (not e.g. generating friction force when turning to change movement direction)
 export const FPSBody: React.FC<{
   radius: number;
-  movement: [number, number];
+  movement: WASDState;
   look: { yaw: number };
 }> = ({ radius, movement, look }) => {
   // one-time read
@@ -194,7 +195,7 @@ export const FPSBody: React.FC<{
     // per-frame control
     const updater = () => {
       // apply motion as minimum movement impulse against linear damping
-      const [mx, my] = movementRef.current;
+      const [mx, my, sprint] = movementRef.current;
       const { yaw } = lookRef.current;
 
       // use Y-axis as the "forward" direction
@@ -204,7 +205,7 @@ export const FPSBody: React.FC<{
         impulseTmp.SelfRotate(yaw);
       }
 
-      impulseTmp.SelfMul(STEP * mass * 15);
+      impulseTmp.SelfMul(STEP * mass * (sprint ? 25 : 10));
       body.ApplyLinearImpulseToCenter(impulseTmp);
 
       // also move the debug view here
