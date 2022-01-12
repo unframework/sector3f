@@ -33,6 +33,7 @@ export const StaticLevel: React.FC = () => {
     <>
       <LevelMesh>
         <Op type="union">
+          <Shape type="cuboid" center={[-1.5, 0.5, 0.5]} size={[3, 1, 1.5]} />
           <group position={[0.5, 0.5, 0]}>
             <Corridor />
           </group>

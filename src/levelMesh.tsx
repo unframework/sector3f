@@ -5,7 +5,7 @@ import { Lightmap } from '@react-three/lightmap';
 import * as THREE from 'three';
 import * as b2 from '@flyover/box2d';
 
-import { Body, useZQueryProvider } from './physics';
+import { Body, useZQueryProvider, ZQuery } from './physics';
 import { CSGModel } from './csg';
 import { applyUVProjection } from './uvProjection';
 
@@ -49,12 +49,8 @@ function createFloorFromVolume(
     computeNormal(vertices);
     tmpNormal.multiplyScalar(-1); // flip the normal
 
-    if (
-      tmpNormal.x !== 0 ||
-      tmpNormal.y !== 0 ||
-      tmpNormal.z !== 1 ||
-      vertices[0][2] !== 0
-    ) {
+    // @todo allow a bit of slope - this is cos(inclineAngle)
+    if (tmpNormal.z !== 1) {
       continue;
     }
 
@@ -74,7 +70,8 @@ function createFloorFromVolume(
     // query-only world body
     queryShape.Set(b2Points);
     const queryBody = queryWorld.CreateBody(queryBodyDef);
-    queryBody.CreateFixture(queryFixDef);
+    const queryFixture = queryBody.CreateFixture(queryFixDef);
+    queryFixture.SetUserData({ zOffset: vertices[0][2] });
   }
 
   // now combine everything into one to create wall chain shapes
@@ -116,15 +113,10 @@ function createFloorFromVolume(
 
 export const LevelMesh: React.FC = ({ children }) => {
   const [floorBody, setFloorBody] = useState<React.ReactElement | null>(null);
-  const [queryWorld, setQueryWorld] = useState<b2.World | null>(null);
+  const [zQuery, setZQuery] = useState<ZQuery | null>(null);
   const [lightmapActive, setLightmapActive] = useState(false);
 
-  useZQueryProvider(
-    queryWorld &&
-      ((x, y) => {
-        return 0;
-      })
-  );
+  useZQueryProvider(zQuery);
 
   return (
     <Lightmap
@@ -139,8 +131,33 @@ export const LevelMesh: React.FC = ({ children }) => {
 
           const [floorBody, queryWorld] = createFloorFromVolume(volume);
           setFloorBody(floorBody);
-          setQueryWorld(queryWorld);
 
+          // box2d geometry query, avoiding dynamic allocation
+          const tmpQueryPos = new b2.Vec2();
+          let qfOutput: number | null = null;
+          const qfCallback = (fixture: b2.Fixture) => {
+            const fixtureData = fixture.GetUserData();
+            if (!fixtureData) {
+              throw new Error('missing level query data');
+            }
+
+            const { zOffset } = fixtureData;
+            qfOutput = zOffset;
+            return false;
+          };
+
+          const zQueryImpl: ZQuery = (x, y) => {
+            tmpQueryPos.Set(x, y);
+
+            qfOutput = null;
+            queryWorld.QueryFixturePoint(tmpQueryPos, qfCallback);
+
+            return qfOutput;
+          };
+
+          setZQuery(() => zQueryImpl); // wrap in another function to avoid confusing useState
+
+          // proceed with lightmapping passes
           setLightmapActive(true);
         }}
       >
