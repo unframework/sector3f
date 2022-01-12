@@ -72,7 +72,7 @@ export function applyUVProjection(geometry: THREE.BufferGeometry) {
     const uvMatrix = getUVMatrix(tmpVN);
 
     tmpUV.fromArray(positionAttr.array, i * 3);
-    tmpUV.multiplyScalar(0.25);
+    tmpUV.multiplyScalar(0.125);
     tmpUV.applyMatrix4(uvMatrix);
     uvAttr.setXY(i, tmpUV.x, tmpUV.y);
   }

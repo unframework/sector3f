@@ -103,7 +103,7 @@ export const TopDownPhysics: React.FC = ({ children }) => {
 
     g_camera.m_center.x = 0;
     g_camera.m_center.y = 0;
-    g_camera.m_extent = 5;
+    g_camera.m_extent = 10;
     g_camera.m_width = canvas.width;
     g_camera.m_height = canvas.height;
 
@@ -156,7 +156,7 @@ export const TopDownPhysics: React.FC = ({ children }) => {
           // apply basic smoothing for retro stair-step feel for large Z changes
           const targetZ = zPos + zOffset;
           const delta = targetZ - target.position.z;
-          target.position.z += Math.abs(delta) < 0.05 ? delta : delta * 0.25;
+          target.position.z += Math.abs(delta) < 0.1 ? delta : delta * 0.25;
         }
         target.quaternion.setFromAxisAngle(upVector, body.GetAngle());
         target.matrixWorldNeedsUpdate = true;
@@ -243,7 +243,7 @@ export const FPSBody: React.FC<{
         impulseTmp.SelfRotate(yaw);
       }
 
-      impulseTmp.SelfMul(STEP * mass * (sprint ? 25 : 10));
+      impulseTmp.SelfMul(STEP * mass * (sprint ? 50 : 20));
       body.ApplyLinearImpulseToCenter(impulseTmp);
 
       // also move the debug view here

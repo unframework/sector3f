@@ -8,21 +8,21 @@ import { LevelMesh } from './levelMesh';
 export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
   return (
     <group>
-      <Shape type="cuboid" center={[0, 0, 0.5]} size={[1, 5, 1]} />
+      <Shape type="cuboid" center={[0, 0, 1]} size={[2, 10, 2]} />
 
       <mesh
-        position={[0, 0, 1.05]}
+        position={[0, 0, 2.05]}
         rotation={new THREE.Euler(Math.PI, 0, 0)}
         receiveShadow
       >
-        <planeGeometry args={[0.25, 0.25]} />
+        <planeGeometry args={[0.5, 0.5]} />
         <meshStandardMaterial
           color="#202020"
           emissive={new THREE.Color(color || '#ffffa0')}
           emissiveIntensity={2}
         />
 
-        <Shape type="cuboid" center={[0, 0, 0]} size={[0.25, 0.25, 0.1]} />
+        <Shape type="cuboid" center={[0, 0, 0]} size={[0.5, 0.5, 0.1]} />
       </mesh>
     </group>
   );
@@ -37,38 +37,34 @@ export const StaticLevel: React.FC = () => {
       <LevelMesh>
         <Op type="union">
           <group matrix={rampMatrix} matrixAutoUpdate={false}>
-            <Shape
-              type="cuboid"
-              center={[-1.5, 0.5, 0.75]}
-              size={[3, 1, 1.5]}
-            />
+            <Shape type="cuboid" center={[-2, 1, 1.5]} size={[4, 2, 3]} />
           </group>
 
-          <group position={[0.5, 0.5, 0]}>
+          <group position={[1, 1, 0]}>
             <Corridor />
           </group>
-          <group position={[0.5, 4.5, 0]}>
+          <group position={[1, 9, 0]}>
             <Corridor />
           </group>
-          <group position={[4.5, 0.5, 0]}>
+          <group position={[9, 1, 0]}>
             <Corridor color="#000000" />
           </group>
-          <group position={[4.5, 4.5, 0]}>
+          <group position={[9, 9, 0]}>
             <Corridor color="#000000" />
           </group>
-          <group position={[2.5, -1.5, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <group position={[5, -3, 0]} rotation={[0, 0, Math.PI / 2]}>
             <Corridor />
           </group>
-          <group position={[2.5, 2.5, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <group position={[5, 5, 0]} rotation={[0, 0, Math.PI / 2]}>
             <Corridor color="#c08000" />
           </group>
-          <group position={[2.5, 6.5, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <group position={[5, 13, 0]} rotation={[0, 0, Math.PI / 2]}>
             <Corridor color="#000000" />
           </group>
         </Op>
       </LevelMesh>
 
-      <pointLight color="#f0f0ff" position={[3.25, 6.25, 0.125]} castShadow />
+      <pointLight color="#f0f0ff" position={[6.5, 12.5, 0.25]} castShadow />
 
       <ambientLight color="#202020" />
     </>

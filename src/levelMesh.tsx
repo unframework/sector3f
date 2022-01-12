@@ -141,7 +141,7 @@ export const LevelMesh: React.FC = ({ children }) => {
   return (
     <Lightmap
       disabled={!lightmapActive}
-      texelsPerUnit={2}
+      texelsPerUnit={1}
       samplerSettings={{ targetSize: 32 }}
     >
       <CSGModel
