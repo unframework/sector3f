@@ -144,6 +144,7 @@ export const TopDownPhysics: React.FC = ({ children }) => {
       const zQuery = activeContextValue.zQuery || DUMMY_Z_QUERY;
 
       // update rendered objects
+      // @todo this outside of the fixed step loop - per-frame instead
       for (let i = 0; i < bodyListeners.length; i += 1) {
         const [body, bodyPos, target, zOffset] = bodyListeners[i];
 
@@ -152,7 +153,9 @@ export const TopDownPhysics: React.FC = ({ children }) => {
         target.position.x = bodyPos.x;
         target.position.y = bodyPos.y;
         if (zPos !== null) {
-          target.position.z = zPos + zOffset;
+          // apply basic smoothing for retro stair-step feel
+          const targetZ = zPos + zOffset;
+          target.position.z += (targetZ - target.position.z) * 0.25;
         }
         target.quaternion.setFromAxisAngle(upVector, body.GetAngle());
         target.matrixWorldNeedsUpdate = true;

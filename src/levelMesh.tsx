@@ -133,6 +133,7 @@ export const LevelMesh: React.FC = ({ children }) => {
           setFloorBody(floorBody);
 
           // box2d geometry query, avoiding dynamic allocation
+          // @todo use a full-shape query and return max of resulting zOffsets
           const tmpQueryPos = new b2.Vec2();
           let qfOutput: number | null = null;
           const qfCallback = (fixture: b2.Fixture) => {
