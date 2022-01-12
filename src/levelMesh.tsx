@@ -24,6 +24,13 @@ function computeNormal(vertices: [number, number, number][]) {
   tmpNormal.normalize();
 }
 
+interface QueryFixtureData {
+  nx: number;
+  ny: number;
+  nz: number;
+  planeOffset: number;
+}
+
 function createFloorFromVolume(
   volume: geometries.geom3.Geom3
 ): [React.ReactElement, b2.World] {
@@ -49,10 +56,23 @@ function createFloorFromVolume(
     computeNormal(vertices);
     tmpNormal.multiplyScalar(-1); // flip the normal
 
-    // @todo allow a bit of slope - this is cos(inclineAngle)
-    if (tmpNormal.z !== 1) {
+    // @todo allow a bit of slope - this is cos(45deg) with extra margin
+    if (tmpNormal.z < 0.701) {
       continue;
     }
+
+    // get plane equation
+    const planeOffset =
+      tmpNormal.x * vertices[0][0] +
+      tmpNormal.y * vertices[0][1] +
+      tmpNormal.z * vertices[0][2];
+
+    const queryData: QueryFixtureData = {
+      nx: tmpNormal.x,
+      ny: tmpNormal.y,
+      nz: tmpNormal.z,
+      planeOffset
+    };
 
     // collect the polygon points in 2D
     const points: [number, number][] = [];
@@ -71,7 +91,7 @@ function createFloorFromVolume(
     queryShape.Set(b2Points);
     const queryBody = queryWorld.CreateBody(queryBodyDef);
     const queryFixture = queryBody.CreateFixture(queryFixDef);
-    queryFixture.SetUserData({ zOffset: vertices[0][2] });
+    queryFixture.SetUserData(queryData);
   }
 
   // now combine everything into one to create wall chain shapes
@@ -137,14 +157,20 @@ export const LevelMesh: React.FC = ({ children }) => {
           const tmpQueryPos = new b2.Vec2();
           let qfOutput: number | null = null;
           const qfCallback = (fixture: b2.Fixture) => {
-            const fixtureData = fixture.GetUserData();
+            const fixtureData = fixture.GetUserData() as
+              | QueryFixtureData
+              | undefined;
             if (!fixtureData) {
               throw new Error('missing level query data');
             }
 
-            const { zOffset } = fixtureData;
-            qfOutput = zOffset;
-            return false;
+            // compute point Z on plane
+            const { nx, ny, nz, planeOffset } = fixtureData;
+            qfOutput =
+              (planeOffset - tmpQueryPos.x * nx - tmpQueryPos.y * ny) / nz;
+
+            // keep looking
+            return true;
           };
 
           const zQueryImpl: ZQuery = (x, y) => {

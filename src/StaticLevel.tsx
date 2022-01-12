@@ -29,11 +29,21 @@ export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
 };
 
 export const StaticLevel: React.FC = () => {
+  const rampMatrix = new THREE.Matrix4();
+  rampMatrix.makeShear(0, 0.3, 0, 0, 0, 0);
+
   return (
     <>
       <LevelMesh>
         <Op type="union">
-          <Shape type="cuboid" center={[-1.5, 0.5, 0.5]} size={[3, 1, 1.5]} />
+          <group matrix={rampMatrix} matrixAutoUpdate={false}>
+            <Shape
+              type="cuboid"
+              center={[-1.5, 0.5, 0.75]}
+              size={[3, 1, 1.5]}
+            />
+          </group>
+
           <group position={[0.5, 0.5, 0]}>
             <Corridor />
           </group>
