@@ -5,7 +5,7 @@ import { Lightmap } from '@react-three/lightmap';
 import * as THREE from 'three';
 import * as b2 from '@flyover/box2d';
 
-import { Body } from './physics';
+import { Body, useZQueryProvider } from './physics';
 import { CSGModel } from './csg';
 import { applyUVProjection } from './uvProjection';
 
@@ -24,7 +24,9 @@ function computeNormal(vertices: [number, number, number][]) {
   tmpNormal.normalize();
 }
 
-function createFloorFromVolume(volume: geometries.geom3.Geom3) {
+function createFloorFromVolume(
+  volume: geometries.geom3.Geom3
+): [React.ReactElement, b2.World] {
   const polys = volume.polygons;
 
   // set up a world used just for querying the polygons in 2D
@@ -109,12 +111,20 @@ function createFloorFromVolume(volume: geometries.geom3.Geom3) {
     );
   };
 
-  return <Floor />;
+  return [<Floor />, queryWorld];
 }
 
 export const LevelMesh: React.FC = ({ children }) => {
   const [floorBody, setFloorBody] = useState<React.ReactElement | null>(null);
+  const [queryWorld, setQueryWorld] = useState<b2.World | null>(null);
   const [lightmapActive, setLightmapActive] = useState(false);
+
+  useZQueryProvider(
+    queryWorld &&
+      ((x, y) => {
+        return 0;
+      })
+  );
 
   return (
     <Lightmap
@@ -126,7 +136,10 @@ export const LevelMesh: React.FC = ({ children }) => {
         onReady={(geometry, volume) => {
           // add our own extra UV logic
           applyUVProjection(geometry);
-          setFloorBody(createFloorFromVolume(volume));
+
+          const [floorBody, queryWorld] = createFloorFromVolume(volume);
+          setFloorBody(floorBody);
+          setQueryWorld(queryWorld);
 
           setLightmapActive(true);
         }}

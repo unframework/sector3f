@@ -7,14 +7,36 @@ import { ThreeDummy } from './scene';
 // @todo avoid using globals
 import { g_debugDraw, g_camera } from './box2dDebugDraw';
 
+export type ZQuery = (x: number, y: number) => number | null;
+
 type Updater = () => void;
-type ListenerTuple = [b2.Body, b2.Vec2, THREE.Object3D];
+type ListenerTuple = [b2.Body, b2.Vec2, THREE.Object3D, number];
 interface PhysicsInfo {
   world: b2.World;
   bodyUpdaters: Updater[];
   bodyListeners: ListenerTuple[];
+  zQuery: ZQuery | null;
 }
 const PhysicsContext = React.createContext<PhysicsInfo | null>(null);
+
+export function useZQueryProvider(zQuery: ZQuery | null) {
+  const info = useContext(PhysicsContext);
+  if (!info) {
+    throw new Error('expecting b2.World');
+  }
+
+  const zQueryRef = useRef(zQuery);
+  zQueryRef.current = zQuery;
+
+  useEffect(() => {
+    info.zQuery = (x, y) => zQueryRef.current && zQueryRef.current(x, y);
+
+    return () => {
+      // @todo safety check
+      info.zQuery = null;
+    };
+  }, [info]);
+}
 
 function createStepTimer(physicsStepDuration: number, onTick: () => void) {
   let lastTime = performance.now(),
@@ -55,6 +77,8 @@ function createStepTimer(physicsStepDuration: number, onTick: () => void) {
 
 const STEP = 1 / 60;
 
+const DUMMY_Z_QUERY = () => null;
+
 export const TopDownPhysics: React.FC = ({ children }) => {
   // initialize context value
   const [activeContextValue] = useState<PhysicsInfo>(() => {
@@ -62,7 +86,7 @@ export const TopDownPhysics: React.FC = ({ children }) => {
     const bodyUpdaters: Updater[] = [];
     const bodyListeners: ListenerTuple[] = [];
 
-    return { world, bodyListeners, bodyUpdaters };
+    return { world, bodyListeners, bodyUpdaters, zQuery: null };
   });
 
   useEffect(() => {
@@ -116,12 +140,20 @@ export const TopDownPhysics: React.FC = ({ children }) => {
 
       ctx.restore();
 
+      // get latest Z-query for this frame
+      const zQuery = activeContextValue.zQuery || DUMMY_Z_QUERY;
+
       // update rendered objects
       for (let i = 0; i < bodyListeners.length; i += 1) {
-        const [body, bodyPos, target] = bodyListeners[i];
+        const [body, bodyPos, target, zOffset] = bodyListeners[i];
+
+        const zPos = zQuery(bodyPos.x, bodyPos.y);
 
         target.position.x = bodyPos.x;
         target.position.y = bodyPos.y;
+        if (zPos !== null) {
+          target.position.z = zPos + zOffset;
+        }
         target.quaternion.setFromAxisAngle(upVector, body.GetAngle());
         target.matrixWorldNeedsUpdate = true;
       }
@@ -183,6 +215,8 @@ export const FPSBody: React.FC<{
     bodyDef.fixedRotation = true;
     const body = world.CreateBody(bodyDef);
 
+    const zOffset = fpsObject.position.z; // for later
+
     const shape = (fixDef.shape = new b2.CircleShape());
     shape.Set(new b2.Vec2(0, 0), initialRadiusRef.current);
     fixDef.density = 200.0; // this arrives at about 40kg mass
@@ -214,7 +248,7 @@ export const FPSBody: React.FC<{
     };
     bodyUpdaters.push(updater);
 
-    const tuple: ListenerTuple = [body, body.GetPosition(), fpsObject];
+    const tuple: ListenerTuple = [body, body.GetPosition(), fpsObject, zOffset];
     bodyListeners.push(tuple);
 
     // clean up
@@ -270,6 +304,8 @@ export const Body: React.FC<{
     bodyDef.linearDamping = 5;
     bodyDef.angularDamping = 5;
 
+    const zOffset = meshObject.position.z; // for later
+
     fixDef.density = 300.0;
     fixDef.friction = 0.8;
     fixDef.restitution = 0.0;
@@ -306,7 +342,7 @@ export const Body: React.FC<{
 
     const tuple: ListenerTuple | null = isStatic
       ? null
-      : [body, body.GetPosition(), meshObject];
+      : [body, body.GetPosition(), meshObject, zOffset];
     if (tuple) {
       bodyListeners.push(tuple);
     }
