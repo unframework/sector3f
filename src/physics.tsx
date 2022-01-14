@@ -291,13 +291,10 @@ export const Body: React.FC<{
 
   // initialize the physics object
   const init = (meshObject: THREE.Object3D) => {
-    if (!(meshObject instanceof THREE.Mesh)) {
-      throw new Error('must attach under ThreeJS mesh');
-    }
-
     const { world, bodyListeners } = info;
 
-    const meshGeom = meshObject.geometry;
+    const meshGeom =
+      meshObject instanceof THREE.Mesh ? meshObject.geometry : null;
 
     const bodyDef = new b2.BodyDef();
     const fixDef = new b2.FixtureDef();

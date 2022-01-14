@@ -229,10 +229,12 @@ export const CSGModel: React.FC<{
   }, 10);
 
   return (
-    <mesh geometry={geom || undefined} castShadow receiveShadow>
-      <meshStandardMaterial map={testTexture} />
+    <GeomContext.Provider value={localCtx}>
+      <mesh geometry={geom || undefined} castShadow receiveShadow>
+        <meshStandardMaterial map={testTexture} />
+      </mesh>
 
-      <GeomContext.Provider value={localCtx}>{children}</GeomContext.Provider>
-    </mesh>
+      {children}
+    </GeomContext.Provider>
   );
 };
