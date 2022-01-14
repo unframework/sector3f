@@ -92,6 +92,20 @@ const GeomContext = React.createContext<{
 
 const IDENTITY_MAT4 = new THREE.Matrix4();
 
+function createGeom(props: ShapeProps): geometries.geom3.Geom3 {
+  switch (props.type) {
+    case 'cuboid':
+      return primitives.cuboid(props);
+    case 'cylinder':
+      return primitives.cylinder(props);
+    default:
+      throw new Error(
+        'unknown shape type: ' +
+          ((props as unknown) as Record<string, unknown>).type
+      );
+  }
+}
+
 export type ShapeProps =
   | ({
       type: 'cuboid';
@@ -102,21 +116,9 @@ export type ShapeProps =
 export const Shape: React.FC<ShapeProps> = (props, ref) => {
   const { geoms, debugScene } = useContext(GeomContext);
 
-  const [geom] = useState(() => {
-    switch (props.type) {
-      case 'cuboid':
-        return primitives.cuboid(props);
-      case 'cylinder':
-        return primitives.cylinder(props);
-      default:
-        throw new Error(
-          'unknown shape type: ' +
-            ((props as unknown) as Record<string, unknown>).type
-        );
-    }
-  });
-
   const init = (obj3d: THREE.Object3D) => {
+    const geom = createGeom(props);
+
     // get world transform
     // @todo proper logic that respects CSG root transform
     obj3d.updateWorldMatrix(true, false); // update parents as well
@@ -128,6 +130,7 @@ export const Shape: React.FC<ShapeProps> = (props, ref) => {
     geoms.push(transformed);
 
     // also create a debug mesh
+    // @todo skip if debug not enabled
     const debugGeom = createBufferFromPolys(geom.polygons);
     const debugMesh = new THREE.Mesh();
     debugMesh.matrix.copy(obj3d.matrixWorld);
