@@ -5,14 +5,11 @@ import React, {
   useContext,
   useRef
 } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { booleans, primitives, geometries, transforms } from '@jscad/modeling';
 
 import { ThreeDummy } from './scene';
-
-// texture from https://opengameart.org/content/metalstone-textures by Spiney
-import testTextureUrl from './ft_conc01_c.png';
 
 // temp math helpers
 const tmpNormal = new THREE.Vector3();
@@ -106,18 +103,24 @@ function createGeom(props: ShapeProps): geometries.geom3.Geom3 {
   }
 }
 
-export type ShapeProps =
+export type AllShapeOptions =
   | ({
       type: 'cuboid';
     } & primitives.CuboidOptions)
   | ({
       type: 'cylinder';
     } & primitives.CylinderOptions);
+
+export type ShapeProps = AllShapeOptions & {
+  material?: string;
+};
+
 export const Shape: React.FC<ShapeProps> = (props, ref) => {
   const { geoms, debugScene } = useContext(GeomContext);
 
   const init = (obj3d: THREE.Object3D) => {
     const geom = createGeom(props);
+    geom.color = (props.material === undefined ? null : props.material) as any;
 
     // get world transform
     // @todo proper logic that respects CSG root transform
@@ -180,26 +183,27 @@ export const Op: React.FC<OpProps> = ({ type, children }) => {
 };
 
 export const CSGModel: React.FC<{
-  onReady?: (
-    geom: THREE.BufferGeometry,
-    volume: geometries.geom3.Geom3
-  ) => void;
+  defaultMaterial?: string;
+  mesh: (
+    material: string,
+    bufferGeometry: THREE.BufferGeometry,
+    polys: geometries.poly3.Poly3[]
+  ) => React.ReactElement | null;
+  onReady: () => void;
   debug?: boolean;
-}> = ({ onReady, debug, children }) => {
-  // avoid re-triggering effect
+}> = ({ defaultMaterial, mesh, onReady, debug, children }) => {
+  // avoid re-triggering effect (need to read prop only first time)
+  const defaultMaterialRef = useRef(defaultMaterial);
+  const meshRef = useRef(mesh);
   const onReadyRef = useRef(onReady);
-  onReadyRef.current = onReady;
 
   const [localCtx] = useState(() => ({
     geoms: [] as geometries.geom3.Geom3[],
     debugScene: new THREE.Scene()
   }));
-  const [geom, setGeom] = useState<THREE.BufferGeometry | null>(null);
-
-  const testTexture = useLoader(THREE.TextureLoader, testTextureUrl);
-  testTexture.wrapS = THREE.RepeatWrapping;
-  testTexture.wrapT = THREE.RepeatWrapping;
-  // testTexture.magFilter = THREE.NearestFilter;
+  const [meshContent, setMeshContent] = useState<React.ReactElement[] | null>(
+    null
+  );
 
   // perform conversion from CSG volumes to mesh
   useLayoutEffect(() => {
@@ -209,13 +213,34 @@ export const CSGModel: React.FC<{
       throw new Error('expected CSG volume result');
     }
 
-    const geom = createBufferFromPolys(volume.polygons);
-    setGeom(geom);
+    const defaultMatName = defaultMaterialRef.current || 'default';
+    const polyListByMatName: Record<string, geometries.poly3.Poly3[]> = {};
+    for (const poly of volume.polygons) {
+      const polyMatProp = (poly.color as unknown) as string | null;
+      const matName = polyMatProp === null ? defaultMatName : polyMatProp;
 
-    // notify in time for the next render cycle
-    if (onReadyRef.current) {
-      onReadyRef.current(geom, volume);
+      const polyList = (polyListByMatName[matName] =
+        polyListByMatName[matName] || []);
+      polyList.push(poly);
     }
+
+    const contentNodeList: React.ReactElement[] = [];
+    for (const materialName of Object.keys(polyListByMatName)) {
+      const polyList = polyListByMatName[materialName];
+      const bufferGeom = createBufferFromPolys(polyList);
+
+      const contentNode = meshRef.current(materialName, bufferGeom, polyList);
+
+      if (contentNode) {
+        contentNodeList.push(
+          React.cloneElement(contentNode, { key: materialName })
+        );
+      }
+    }
+
+    setMeshContent(contentNodeList);
+
+    onReadyRef.current();
   }, []);
 
   useFrame(({ gl, camera }) => {
@@ -230,9 +255,7 @@ export const CSGModel: React.FC<{
 
   return (
     <GeomContext.Provider value={localCtx}>
-      <mesh geometry={geom || undefined} castShadow receiveShadow>
-        <meshStandardMaterial map={testTexture} />
-      </mesh>
+      {meshContent}
 
       {children}
     </GeomContext.Provider>

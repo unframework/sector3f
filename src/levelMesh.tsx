@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { booleans, primitives, geometries } from '@jscad/modeling';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useLoader } from '@react-three/fiber';
 import { Lightmap } from '@react-three/lightmap';
 import * as THREE from 'three';
 import * as b2 from '@flyover/box2d';
@@ -8,6 +8,9 @@ import * as b2 from '@flyover/box2d';
 import { Body, useZQueryProvider, ZQuery } from './physics';
 import { CSGModel } from './csg';
 import { applyUVProjection } from './uvProjection';
+
+// texture from https://opengameart.org/content/metalstone-textures by Spiney
+import testTextureUrl from './ft_conc01_c.png';
 
 // temp math helpers
 const tmpNormal = new THREE.Vector3();
@@ -32,10 +35,8 @@ interface QueryFixtureData {
 }
 
 function createFloorFromVolume(
-  volume: geometries.geom3.Geom3
+  polys: geometries.poly3.Poly3[]
 ): [React.ReactElement, b2.World] {
-  const polys = volume.polygons;
-
   // set up a world used just for querying the polygons in 2D
   // @todo plug in Z-query to the containing physics context
   const queryWorld = new b2.World(new b2.Vec2(0, 0));
@@ -138,6 +139,11 @@ export const LevelMesh: React.FC = ({ children }) => {
 
   useZQueryProvider(zQuery);
 
+  const testTexture = useLoader(THREE.TextureLoader, testTextureUrl);
+  testTexture.wrapS = THREE.RepeatWrapping;
+  testTexture.wrapT = THREE.RepeatWrapping;
+  // testTexture.magFilter = THREE.NearestFilter;
+
   return (
     <Lightmap
       disabled={!lightmapActive}
@@ -145,11 +151,12 @@ export const LevelMesh: React.FC = ({ children }) => {
       samplerSettings={{ targetSize: 32 }}
     >
       <CSGModel
-        onReady={(geometry, volume) => {
+        mesh={(material, geometry, polys) => {
+          // @todo move per-mesh stuff in child ThreeDummy
           // add our own extra UV logic
           applyUVProjection(geometry);
 
-          const [floorBody, queryWorld] = createFloorFromVolume(volume);
+          const [floorBody, queryWorld] = createFloorFromVolume(polys);
           setFloorBody(floorBody);
 
           // box2d geometry query, avoiding dynamic allocation
@@ -184,6 +191,13 @@ export const LevelMesh: React.FC = ({ children }) => {
 
           setZQuery(() => zQueryImpl); // wrap in another function to avoid confusing useState
 
+          return (
+            <mesh geometry={geometry} castShadow receiveShadow>
+              <meshStandardMaterial map={testTexture} />
+            </mesh>
+          );
+        }}
+        onReady={() => {
           // proceed with lightmapping passes
           setLightmapActive(true);
         }}
