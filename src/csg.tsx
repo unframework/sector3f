@@ -9,6 +9,9 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { booleans, primitives, geometries, transforms } from '@jscad/modeling';
 import { CSG } from 'three-csg-ts';
+import { Vertex } from 'three-csg-ts/lib/esm/Vertex';
+import { Polygon } from 'three-csg-ts/lib/esm/Polygon';
+import { Vector } from 'three-csg-ts/lib/esm/Vector';
 
 import { ThreeDummy } from './scene';
 
@@ -41,6 +44,157 @@ const CSGContext = React.createContext<CSGInfo>({
 
 const identity = new THREE.Matrix4();
 
+// special heuristic CSG shape generation based on box geometry
+const BOX_FACE_INDICES = [0, 1, 4, 5];
+function CSG_fromBoxGeometry(
+  geom: THREE.BoxBufferGeometry,
+  objectIndex: number
+) {
+  let polys = [];
+  const faceGroups = geom.groups;
+  if (faceGroups.length !== 6) {
+    throw new Error('expecting 6 BoxBufferGeometry face groups');
+  }
+
+  const posattr = geom.attributes.position;
+  const normalattr = geom.attributes.normal;
+  const uvattr = geom.attributes.uv;
+  const colorattr = geom.attributes.color;
+
+  if (!geom.index) {
+    throw new Error('BoxBufferGeometry should have index attr');
+  }
+  const index = geom.index.array;
+
+  if (geom.index.count !== 3 * 12) {
+    throw new Error('BoxBufferGeometry should have 12 faces');
+  }
+
+  console.log(geom);
+
+  polys = [];
+
+  for (const group of faceGroups) {
+    if (group.count !== 6) {
+      throw new Error('expecting 2 faces in box face group');
+    }
+
+    const vertices = new Array(4);
+
+    for (let j = 0; j < 4; j++) {
+      const vi = index[group.start + BOX_FACE_INDICES[j]];
+      const vp = vi * 3;
+      const vt = vi * 2;
+      const x = posattr.array[vp];
+      const y = posattr.array[vp + 1];
+      const z = posattr.array[vp + 2];
+      const nx = normalattr.array[vp];
+      const ny = normalattr.array[vp + 1];
+      const nz = normalattr.array[vp + 2];
+      const u = uvattr?.array[vt];
+      const v = uvattr?.array[vt + 1];
+
+      vertices[j] = new Vertex(
+        new Vector(x, y, z),
+        new Vector(nx, ny, nz),
+        new Vector(u, v, 0),
+        colorattr &&
+          new Vector(
+            colorattr.array[vt],
+            colorattr.array[vt + 1],
+            colorattr.array[vt + 2]
+          )
+      );
+    }
+
+    polys.push(new Polygon(vertices, objectIndex));
+  }
+  return polys.filter(p => !isNaN(p.plane.normal.x));
+}
+
+// original CSG polygon generation from upstream
+function CSG_fromGeometry(geom: THREE.BufferGeometry, objectIndex?: any) {
+  let polys = [];
+  const posattr = geom.attributes.position;
+  const normalattr = geom.attributes.normal;
+  const uvattr = geom.attributes.uv;
+  const colorattr = geom.attributes.color;
+  const grps = geom.groups;
+  let index;
+
+  if (geom.index) {
+    index = geom.index.array;
+  } else {
+    index = new Array((posattr.array.length / posattr.itemSize) | 0);
+    for (let i = 0; i < index.length; i++) index[i] = i;
+  }
+
+  const triCount = (index.length / 3) | 0;
+  polys = new Array(triCount);
+
+  for (let i = 0, pli = 0, l = index.length; i < l; i += 3, pli++) {
+    const vertices = new Array(3);
+    for (let j = 0; j < 3; j++) {
+      const vi = index[i + j];
+      const vp = vi * 3;
+      const vt = vi * 2;
+      const x = posattr.array[vp];
+      const y = posattr.array[vp + 1];
+      const z = posattr.array[vp + 2];
+      const nx = normalattr.array[vp];
+      const ny = normalattr.array[vp + 1];
+      const nz = normalattr.array[vp + 2];
+      const u = uvattr?.array[vt];
+      const v = uvattr?.array[vt + 1];
+
+      vertices[j] = new Vertex(
+        new Vector(x, y, z),
+        new Vector(nx, ny, nz),
+        new Vector(u, v, 0),
+        colorattr &&
+          new Vector(
+            colorattr.array[vt],
+            colorattr.array[vt + 1],
+            colorattr.array[vt + 2]
+          )
+      );
+    }
+
+    if (objectIndex === undefined && grps && grps.length > 0) {
+      for (const grp of grps) {
+        if (index[i] >= grp.start && index[i] < grp.start + grp.count) {
+          polys[pli] = new Polygon(vertices, grp.materialIndex);
+        }
+      }
+    } else {
+      polys[pli] = new Polygon(vertices, objectIndex);
+    }
+  }
+  return polys.filter(p => !isNaN(p.plane.normal.x));
+}
+
+// CSG polygon generation that defers to box-specific heuristic as needed
+// @todo submit upstream?
+function CSG_fromMesh(mesh: THREE.Mesh, objectIndex: number): CSG {
+  const ttvv0 = new THREE.Vector3();
+  const tmpm3 = new THREE.Matrix3();
+  tmpm3.getNormalMatrix(mesh.matrix);
+
+  const polys =
+    mesh.geometry instanceof THREE.BoxBufferGeometry
+      ? CSG_fromBoxGeometry(mesh.geometry, objectIndex)
+      : CSG_fromGeometry(mesh.geometry, objectIndex);
+  for (let i = 0; i < polys.length; i++) {
+    const p = polys[i];
+    for (let j = 0; j < p.vertices.length; j++) {
+      const v = p.vertices[j];
+      v.pos.copy(ttvv0.copy(v.pos.toVector3()).applyMatrix4(mesh.matrix));
+      v.normal.copy(ttvv0.copy(v.normal.toVector3()).applyMatrix3(tmpm3));
+    }
+  }
+  return CSG.fromPolygons(polys);
+}
+
 export const CSGContent: React.FC<{
   material?: string;
   children: React.ReactElement<'mesh'>;
@@ -72,7 +226,7 @@ export const CSGContent: React.FC<{
     mesh.updateWorldMatrix(true, false);
 
     mesh.matrix.copy(mesh.matrixWorld); // make CSG use world matrix @todo fix upstream
-    const csg = CSG.fromMesh(mesh, materialIndex);
+    const csg = CSG_fromMesh(mesh, materialIndex);
     mesh.matrix.identity(); // reset just in case
 
     items.push(csg);
