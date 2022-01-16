@@ -365,6 +365,7 @@ export const CSGRoot: React.FC<{
 
     // @todo use root's world matrix
     const geomResult = csg.toGeometry(identity);
+    geomResult.index = null; // trigger lightmapper's own vertex "welding" logic @todo this properly
     setGeom(geomResult);
 
     // notify downstream code
