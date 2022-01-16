@@ -8,6 +8,7 @@ import * as b2 from '@flyover/box2d';
 import { Body, useZQueryProvider, ZQuery } from './physics';
 import { CSGModel } from './csg';
 import { applyUVProjection } from './uvProjection';
+import { DebugOverlayWidgets } from './lmDebug';
 
 // texture from https://opengameart.org/content/metalstone-textures by Spiney
 import testTextureUrl from './ft_conc01_c.png';
@@ -150,6 +151,8 @@ export const LevelMesh: React.FC = ({ children }) => {
       texelsPerUnit={1}
       samplerSettings={{ targetSize: 32 }}
     >
+      <DebugOverlayWidgets />
+
       <CSGModel
         mesh={(material, geometry, polys) => {
           // @todo move per-mesh stuff in child ThreeDummy
