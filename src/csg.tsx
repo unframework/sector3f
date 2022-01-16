@@ -385,7 +385,7 @@ export const CSGRoot: React.FC<{
   return (
     <CSGContext.Provider value={localCtx}>
       {geom && (
-        <mesh>
+        <mesh castShadow receiveShadow>
           <primitive attach="geometry" object={geom} />
           {materialList}
         </mesh>

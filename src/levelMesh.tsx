@@ -214,8 +214,8 @@ export const LevelMesh: React.FC = ({ children }) => {
 
           setZQuery(() => zQueryImpl); // wrap in another function to avoid confusing useState
 
-          // // proceed with lightmapping passes
-          // setLightmapActive(true);
+          // proceed with lightmapping passes
+          setLightmapActive(true);
         }}
       >
         {children}
