@@ -311,7 +311,7 @@ export const Op: React.FC<OpProps> = ({ type, children }) => {
 
 export const CSGRoot: React.FC<{
   materials: Record<string, React.ReactElement>;
-  onReady: (csg: CSG) => void;
+  onReady: (csg: CSG, materialMap: Record<string, number>) => void;
 }> = ({ materials, onReady, children }) => {
   // read once
   const materialsRef = useRef(materials);
@@ -367,7 +367,7 @@ export const CSGRoot: React.FC<{
     setGeom(geomResult);
 
     // notify downstream code
-    onReadyRef.current(csg);
+    onReadyRef.current(csg, materialMap);
   }, []);
 
   useFrame(({ gl, camera }) => {
