@@ -54,12 +54,14 @@ export const CSGContent: React.FC<{ children: React.ReactElement<'mesh'> }> = ({
     }
 
     // mark for hiding later
-    // setIsCollected(true);
+    setIsCollected(true);
 
     mesh.updateWorldMatrix(true, false);
     mesh.matrix.copy(mesh.matrixWorld); // make CSG use world matrix @todo fix upstream
     const csg = CSG.fromMesh(mesh);
     mesh.matrix.identity(); // reset just in case
+
+    items.push(csg);
 
     // also create a debug mesh
     // @todo skip if debug not enabled
@@ -205,6 +207,63 @@ export const Shape: React.FC<ShapeProps> = (props, ref) => {
   return <ThreeDummy init={init} />;
 };
 
+// dummy used as fallback
+const emptyCSG = CSG.fromPolygons([]);
+
+export type CSGOpProps = {
+  type: 'union' | 'subtract' | 'intersect' | 'inverse';
+};
+export const CSGOp: React.FC<CSGOpProps> = ({ type, children }) => {
+  const { items, debugScene } = useContext(CSGContext);
+
+  const [localCtx] = useState<CSGInfo>(() => ({
+    items: [],
+    debugScene
+  }));
+  useLayoutEffect(() => {
+    switch (type) {
+      case 'union':
+        items.push(
+          localCtx.items.reduce(
+            (prev, item) => (prev ? prev.union(item) : item),
+            null as CSG | null
+          ) || emptyCSG
+        );
+        return;
+      case 'subtract':
+        items.push(
+          localCtx.items.reduce(
+            (prev, item) => (prev ? prev.subtract(item) : item),
+            null as CSG | null
+          ) || emptyCSG
+        );
+        return;
+      case 'intersect':
+        items.push(
+          localCtx.items.reduce(
+            (prev, item) => (prev ? prev.intersect(item) : item),
+            null as CSG | null
+          ) || emptyCSG
+        );
+        return;
+      case 'inverse':
+        // union the shapes before inverting
+        items.push(
+          (
+            localCtx.items.reduce(
+              (prev, item) => (prev ? prev.union(item) : item),
+              null as CSG | null
+            ) || emptyCSG
+          ).inverse()
+        );
+        return;
+      default:
+        throw new Error('unknown op type: ' + type);
+    }
+  }, [items, localCtx]);
+
+  return <CSGContext.Provider value={localCtx}>{children}</CSGContext.Provider>;
+};
 export type OpProps = {
   type: 'union' | 'subtract' | 'intersect';
 };
@@ -242,8 +301,20 @@ export const CSGRoot: React.FC<{}> = ({ children }) => {
     debugScene: new THREE.Scene()
   }));
 
+  const [geom, setGeom] = useState<THREE.BufferGeometry | null>(null);
+
   // collect CSG shapes
-  useLayoutEffect(() => {}, []);
+  useLayoutEffect(() => {
+    // union everything that bubbles up
+    const csg =
+      localCtx.items.reduce(
+        (prev, item) => (prev ? prev.union(item) : item),
+        null as CSG | null
+      ) || emptyCSG;
+
+    // @todo use root's world matrix
+    setGeom(csg.inverse().toGeometry(identity));
+  }, []);
 
   useFrame(({ gl, camera }) => {
     gl.autoClear = false;
@@ -251,7 +322,18 @@ export const CSGRoot: React.FC<{}> = ({ children }) => {
     gl.autoClear = true;
   }, 10);
 
-  return <CSGContext.Provider value={localCtx}>{children}</CSGContext.Provider>;
+  return (
+    <CSGContext.Provider value={localCtx}>
+      {geom && (
+        <mesh>
+          <primitive attach="geometry" object={geom} />
+          <meshStandardMaterial />
+        </mesh>
+      )}
+
+      {children}
+    </CSGContext.Provider>
+  );
 };
 
 export const CSGModel: React.FC<{

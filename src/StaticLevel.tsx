@@ -2,7 +2,7 @@ import React from 'react';
 import { MeshReflectorMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 
-import { Op, Shape, CSGRoot, CSGContent } from './csg';
+import { Op, Shape, CSGRoot, CSGOp, CSGContent } from './csg';
 import { LevelMesh } from './levelMesh';
 
 // export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
@@ -36,13 +36,21 @@ export const StaticLevel: React.FC = () => {
     <>
       <LevelMesh>
         <CSGRoot>
-          <group matrix={rampMatrix} matrixAutoUpdate={false}>
+          <CSGOp type="union">
+            <group matrix={rampMatrix} matrixAutoUpdate={false}>
+              <CSGContent>
+                <mesh position={[-2, 1, 1.5]}>
+                  <boxBufferGeometry args={[4, 2, 3]} />
+                </mesh>
+              </CSGContent>
+            </group>
+
             <CSGContent>
-              <mesh position={[-2, 1, 1.5]}>
-                <boxBufferGeometry args={[4, 2, 3]} />
+              <mesh position={[0, 1, 1.5]}>
+                <boxBufferGeometry args={[1, 2, 1]} />
               </mesh>
             </CSGContent>
-          </group>
+          </CSGOp>
         </CSGRoot>
 
         {/*<Op type="union">*/}
