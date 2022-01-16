@@ -44,7 +44,7 @@ export const StaticLevel: React.FC = () => {
     <>
       <LevelMesh>
         <group matrix={rampMatrix} matrixAutoUpdate={false}>
-          <CSGContent>
+          <CSGContent material="red">
             <mesh position={[-2, 1, 1.5]}>
               <boxBufferGeometry args={[4, 2, 3]} />
             </mesh>

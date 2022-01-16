@@ -30,19 +30,25 @@ function computeNormal(vertices: [number, number, number][]) {
 // context for gathering shape arguments for containing operation
 interface CSGInfo {
   items: CSG[];
+  materialMap: Record<string, number>;
   debugScene: THREE.Scene;
 }
 const CSGContext = React.createContext<CSGInfo>({
   items: [],
+  materialMap: {},
   debugScene: new THREE.Scene()
 });
 
 const identity = new THREE.Matrix4();
 
-export const CSGContent: React.FC<{ children: React.ReactElement<'mesh'> }> = ({
-  children
-}) => {
-  const { items, debugScene } = useContext(CSGContext);
+export const CSGContent: React.FC<{
+  material?: string;
+  children: React.ReactElement<'mesh'>;
+}> = ({ material, children }) => {
+  // read once
+  const materialRef = useRef(material);
+
+  const { items, materialMap, debugScene } = useContext(CSGContext);
 
   const meshRef = useRef<THREE.Mesh>(null);
   const [isCollected, setIsCollected] = useState(false);
@@ -53,12 +59,18 @@ export const CSGContent: React.FC<{ children: React.ReactElement<'mesh'> }> = ({
       throw new Error('expecting mesh content');
     }
 
+    const materialName = materialRef.current || 'default';
+    const materialIndex = materialMap[materialName];
+    if (materialIndex === undefined) {
+      throw new Error('cannot find material: ' + materialName);
+    }
+
     // mark for hiding later
     setIsCollected(true);
 
     mesh.updateWorldMatrix(true, false);
     mesh.matrix.copy(mesh.matrixWorld); // make CSG use world matrix @todo fix upstream
-    const csg = CSG.fromMesh(mesh);
+    const csg = CSG.fromMesh(mesh, materialIndex);
     mesh.matrix.identity(); // reset just in case
 
     items.push(csg);
@@ -214,11 +226,11 @@ export type CSGOpProps = {
   type: 'union' | 'subtract' | 'intersect' | 'inverse';
 };
 export const CSGOp: React.FC<CSGOpProps> = ({ type, children }) => {
-  const { items, debugScene } = useContext(CSGContext);
+  const { items, ...parentContext } = useContext(CSGContext);
 
   const [localCtx] = useState<CSGInfo>(() => ({
-    items: [],
-    debugScene
+    ...parentContext,
+    items: []
   }));
   useLayoutEffect(() => {
     switch (type) {
@@ -296,12 +308,41 @@ export const Op: React.FC<OpProps> = ({ type, children }) => {
 };
 
 export const CSGRoot: React.FC<{
+  materials: Record<string, React.ReactElement>;
   onReady: (csg: CSG) => void;
-}> = ({ onReady, children }) => {
+}> = ({ materials, onReady, children }) => {
+  // read once
+  const materialsRef = useRef(materials);
   const onReadyRef = useRef(onReady);
+
+  // build map of sequential material indexes
+  const materialMap = useMemo(() => {
+    const result: Record<string, number> = {};
+    let count = 0;
+
+    for (const materialName of Object.keys(materialsRef.current)) {
+      result[materialName] = count;
+      count += 1;
+    }
+
+    return result;
+  }, []);
+
+  const materialList = useMemo(
+    () =>
+      Object.keys(materialsRef.current).map(mat =>
+        React.cloneElement(materialsRef.current[mat], {
+          key: mat,
+          attach: undefined, // clear just in case
+          attachArray: 'material'
+        })
+      ),
+    []
+  );
 
   const [localCtx] = useState<CSGInfo>(() => ({
     items: [],
+    materialMap,
     debugScene: new THREE.Scene()
   }));
 
@@ -320,7 +361,8 @@ export const CSGRoot: React.FC<{
     const csg = union.inverse();
 
     // @todo use root's world matrix
-    setGeom(csg.toGeometry(identity));
+    const geomResult = csg.toGeometry(identity);
+    setGeom(geomResult);
 
     // notify downstream code
     onReadyRef.current(csg);
@@ -337,7 +379,7 @@ export const CSGRoot: React.FC<{
       {geom && (
         <mesh>
           <primitive attach="geometry" object={geom} />
-          <meshStandardMaterial />
+          {materialList}
         </mesh>
       )}
 

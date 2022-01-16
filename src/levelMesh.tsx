@@ -154,7 +154,11 @@ export const LevelMesh: React.FC = ({ children }) => {
       <DebugOverlayWidgets />
 
       <CSGRoot
-        onReady={() => {
+        materials={{
+          default: <meshStandardMaterial color="#f0f0f0" />,
+          red: <meshStandardMaterial color="#ff8080" />
+        }}
+        onReady={csg => {
           // const [floorBody, queryWorld] = createFloorFromVolume(polys);
           // setFloorBody(floorBody);
           // // box2d geometry query, avoiding dynamic allocation
