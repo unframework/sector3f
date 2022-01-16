@@ -106,6 +106,7 @@ function createFloorFromVolume(
   }
 
   // now combine everything into one to create wall chain shapes
+  // @todo use a different library than JSCAD?
   const combinedGeom = booleans.union(floorPolygons);
   const outlines = geometries.geom2.toOutlines(combinedGeom);
 

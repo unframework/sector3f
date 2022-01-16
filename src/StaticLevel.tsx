@@ -2,7 +2,7 @@ import React from 'react';
 import { MeshReflectorMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 
-import { Op, Shape, CSGRoot, CSGOp, CSGContent } from './csg';
+import { CSGRoot, CSGOp, CSGContent } from './csg';
 import { LevelMesh, WorldUV } from './levelMesh';
 
 export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
