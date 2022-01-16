@@ -295,7 +295,11 @@ export const Op: React.FC<OpProps> = ({ type, children }) => {
   );
 };
 
-export const CSGRoot: React.FC<{}> = ({ children }) => {
+export const CSGRoot: React.FC<{
+  onReady: (csg: CSG) => void;
+}> = ({ onReady, children }) => {
+  const onReadyRef = useRef(onReady);
+
   const [localCtx] = useState<CSGInfo>(() => ({
     items: [],
     debugScene: new THREE.Scene()
@@ -306,14 +310,20 @@ export const CSGRoot: React.FC<{}> = ({ children }) => {
   // collect CSG shapes
   useLayoutEffect(() => {
     // union everything that bubbles up
-    const csg =
+    const union =
       localCtx.items.reduce(
         (prev, item) => (prev ? prev.union(item) : item),
         null as CSG | null
       ) || emptyCSG;
 
+    // flip to show interior
+    const csg = union.inverse();
+
     // @todo use root's world matrix
-    setGeom(csg.inverse().toGeometry(identity));
+    setGeom(csg.toGeometry(identity));
+
+    // notify downstream code
+    onReadyRef.current(csg);
   }, []);
 
   useFrame(({ gl, camera }) => {

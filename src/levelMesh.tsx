@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import * as b2 from '@flyover/box2d';
 
 import { Body, useZQueryProvider, ZQuery } from './physics';
-import { CSGModel } from './csg';
+import { CSGRoot } from './csg';
 import { applyUVProjection } from './uvProjection';
 import { DebugOverlayWidgets } from './lmDebug';
 
@@ -153,62 +153,43 @@ export const LevelMesh: React.FC = ({ children }) => {
     >
       <DebugOverlayWidgets />
 
-      <CSGModel
-        mesh={(material, geometry, polys) => {
-          // @todo move per-mesh stuff in child ThreeDummy
-          // add our own extra UV logic
-          applyUVProjection(geometry);
-
-          const [floorBody, queryWorld] = createFloorFromVolume(polys);
-          setFloorBody(floorBody);
-
-          // box2d geometry query, avoiding dynamic allocation
-          // @todo use a full-shape query and return max of resulting zOffsets
-          const tmpQueryPos = new b2.Vec2();
-          let qfOutput: number | null = null;
-          const qfCallback = (fixture: b2.Fixture) => {
-            const fixtureData = fixture.GetUserData() as
-              | QueryFixtureData
-              | undefined;
-            if (!fixtureData) {
-              throw new Error('missing level query data');
-            }
-
-            // compute point Z on plane
-            const { nx, ny, nz, planeOffset } = fixtureData;
-            qfOutput =
-              (planeOffset - tmpQueryPos.x * nx - tmpQueryPos.y * ny) / nz;
-
-            // keep looking
-            return true;
-          };
-
-          const zQueryImpl: ZQuery = (x, y) => {
-            tmpQueryPos.Set(x, y);
-
-            qfOutput = null;
-            queryWorld.QueryFixturePoint(tmpQueryPos, qfCallback);
-
-            return qfOutput;
-          };
-
-          setZQuery(() => zQueryImpl); // wrap in another function to avoid confusing useState
-
-          return (
-            <mesh geometry={geometry} castShadow receiveShadow>
-              <meshStandardMaterial map={testTexture} />
-            </mesh>
-          );
-        }}
+      <CSGRoot
         onReady={() => {
-          // proceed with lightmapping passes
-          setLightmapActive(true);
+          // const [floorBody, queryWorld] = createFloorFromVolume(polys);
+          // setFloorBody(floorBody);
+          // // box2d geometry query, avoiding dynamic allocation
+          // // @todo use a full-shape query and return max of resulting zOffsets
+          // const tmpQueryPos = new b2.Vec2();
+          // let qfOutput: number | null = null;
+          // const qfCallback = (fixture: b2.Fixture) => {
+          //   const fixtureData = fixture.GetUserData() as
+          //     | QueryFixtureData
+          //     | undefined;
+          //   if (!fixtureData) {
+          //     throw new Error('missing level query data');
+          //   }
+          //   // compute point Z on plane
+          //   const { nx, ny, nz, planeOffset } = fixtureData;
+          //   qfOutput =
+          //     (planeOffset - tmpQueryPos.x * nx - tmpQueryPos.y * ny) / nz;
+          //   // keep looking
+          //   return true;
+          // };
+          // const zQueryImpl: ZQuery = (x, y) => {
+          //   tmpQueryPos.Set(x, y);
+          //   qfOutput = null;
+          //   queryWorld.QueryFixturePoint(tmpQueryPos, qfCallback);
+          //   return qfOutput;
+          // };
+          // setZQuery(() => zQueryImpl); // wrap in another function to avoid confusing useState
+          // // proceed with lightmapping passes
+          // setLightmapActive(true);
         }}
       >
         {children}
 
         {floorBody}
-      </CSGModel>
+      </CSGRoot>
     </Lightmap>
   );
 };

@@ -35,23 +35,21 @@ export const StaticLevel: React.FC = () => {
   return (
     <>
       <LevelMesh>
-        <CSGRoot>
-          <CSGOp type="union">
-            <group matrix={rampMatrix} matrixAutoUpdate={false}>
-              <CSGContent>
-                <mesh position={[-2, 1, 1.5]}>
-                  <boxBufferGeometry args={[4, 2, 3]} />
-                </mesh>
-              </CSGContent>
-            </group>
-
+        <CSGOp type="union">
+          <group matrix={rampMatrix} matrixAutoUpdate={false}>
             <CSGContent>
-              <mesh position={[0, 1, 1.5]}>
-                <boxBufferGeometry args={[1, 2, 1]} />
+              <mesh position={[-2, 1, 1.5]}>
+                <boxBufferGeometry args={[4, 2, 3]} />
               </mesh>
             </CSGContent>
-          </CSGOp>
-        </CSGRoot>
+          </group>
+
+          <CSGContent>
+            <mesh position={[0, 1, 1.5]}>
+              <boxBufferGeometry args={[1, 2, 1]} />
+            </mesh>
+          </CSGContent>
+        </CSGOp>
 
         {/*<Op type="union">*/}
         {/*<group matrix={rampMatrix} matrixAutoUpdate={false}>
