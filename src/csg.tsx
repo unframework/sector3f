@@ -8,6 +8,7 @@ import React, {
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { booleans, primitives, geometries, transforms } from '@jscad/modeling';
+import { CSG } from 'three-csg-ts';
 
 import { ThreeDummy } from './scene';
 
@@ -25,6 +26,59 @@ function computeNormal(vertices: [number, number, number][]) {
   tmpNormal.crossVectors(tmpA, tmpB);
   tmpNormal.normalize();
 }
+
+// context for gathering shape arguments for containing operation
+interface CSGInfo {
+  items: CSG[];
+  debugScene: THREE.Scene;
+}
+const CSGContext = React.createContext<CSGInfo>({
+  items: [],
+  debugScene: new THREE.Scene()
+});
+
+const identity = new THREE.Matrix4();
+
+export const CSGContent: React.FC<{ children: React.ReactElement<'mesh'> }> = ({
+  children
+}) => {
+  const { items, debugScene } = useContext(CSGContext);
+
+  const meshRef = useRef<THREE.Mesh>(null);
+  const [isCollected, setIsCollected] = useState(false);
+
+  useLayoutEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh) {
+      throw new Error('expecting mesh content');
+    }
+
+    // mark for hiding later
+    // setIsCollected(true);
+
+    mesh.updateWorldMatrix(true, false);
+    mesh.matrix.copy(mesh.matrixWorld); // make CSG use world matrix @todo fix upstream
+    const csg = CSG.fromMesh(mesh);
+    mesh.matrix.identity(); // reset just in case
+
+    // also create a debug mesh
+    // @todo skip if debug not enabled
+    const debugGeom = csg.toGeometry(identity);
+    const debugMesh = new THREE.Mesh();
+    debugMesh.matrixAutoUpdate = false;
+
+    debugMesh.geometry = debugGeom;
+    debugMesh.material = new THREE.MeshBasicMaterial({
+      color: '#ff0000',
+      wireframe: true,
+      depthTest: false
+    });
+    debugScene.add(debugMesh);
+  }, []);
+
+  // show mesh only the first time
+  return isCollected ? null : React.cloneElement(children, { ref: meshRef });
+};
 
 // all the geometry normals are flipped to reflect the subtractive mode of boolean logic
 // @todo rejoin the split-up polygons (with matching plane only) to avoid seams
@@ -182,6 +236,24 @@ export const Op: React.FC<OpProps> = ({ type, children }) => {
   );
 };
 
+export const CSGRoot: React.FC<{}> = ({ children }) => {
+  const [localCtx] = useState<CSGInfo>(() => ({
+    items: [],
+    debugScene: new THREE.Scene()
+  }));
+
+  // collect CSG shapes
+  useLayoutEffect(() => {}, []);
+
+  useFrame(({ gl, camera }) => {
+    gl.autoClear = false;
+    gl.render(localCtx.debugScene, camera);
+    gl.autoClear = true;
+  }, 10);
+
+  return <CSGContext.Provider value={localCtx}>{children}</CSGContext.Provider>;
+};
+
 export const CSGModel: React.FC<{
   defaultMaterial?: string;
   mesh: (
@@ -210,7 +282,8 @@ export const CSGModel: React.FC<{
     // @todo use union?
     const volume = localCtx.geoms[0];
     if (!volume) {
-      throw new Error('expected CSG volume result');
+      return; // @todo
+      // throw new Error('expected CSG volume result');
     }
 
     const defaultMatName = defaultMaterialRef.current || 'default';
