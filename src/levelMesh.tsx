@@ -8,6 +8,7 @@ import * as b2 from '@flyover/box2d';
 import { Body, useZQueryProvider, ZQuery } from './physics';
 import { CSGRoot } from './csg';
 import { applyUVProjection } from './uvProjection';
+import { ThreeDummy } from './scene';
 import { DebugOverlayWidgets } from './lmDebug';
 
 // texture from https://opengameart.org/content/metalstone-textures by Spiney
@@ -133,6 +134,24 @@ function createFloorFromVolume(
   return [<Floor />, queryWorld];
 }
 
+export const WorldUV: React.FC = ({ children }) => {
+  return (
+    <ThreeDummy
+      init={obj => {
+        if (obj instanceof THREE.Mesh) {
+          const geom = obj.geometry;
+          if (geom instanceof THREE.BufferGeometry) {
+            // @todo check if needs update?
+            obj.updateWorldMatrix(true, false);
+
+            applyUVProjection(geom, obj.matrixWorld);
+          }
+        }
+      }}
+    />
+  );
+};
+
 export const LevelMesh: React.FC = ({ children }) => {
   const [floorBody, setFloorBody] = useState<React.ReactElement | null>(null);
   const [zQuery, setZQuery] = useState<ZQuery | null>(null);
@@ -155,7 +174,7 @@ export const LevelMesh: React.FC = ({ children }) => {
 
       <CSGRoot
         materials={{
-          default: <meshStandardMaterial color="#f0f0f0" />,
+          default: <meshStandardMaterial map={testTexture} />,
           red: <meshStandardMaterial color="#ff8080" />
         }}
         onReady={csg => {

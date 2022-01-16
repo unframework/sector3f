@@ -68,7 +68,9 @@ export const CSGContent: React.FC<{
     // mark for hiding later
     setIsCollected(true);
 
+    // @todo check if needs update?
     mesh.updateWorldMatrix(true, false);
+
     mesh.matrix.copy(mesh.matrixWorld); // make CSG use world matrix @todo fix upstream
     const csg = CSG.fromMesh(mesh, materialIndex);
     mesh.matrix.identity(); // reset just in case

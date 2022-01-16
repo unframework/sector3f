@@ -50,9 +50,14 @@ function getUVMatrix(normal: THREE.Vector3): THREE.Matrix4 {
   return uvMatrices[largestAxis + (elems[largestAxis] >= 0 ? 0 : 3)];
 }
 
-export function applyUVProjection(geometry: THREE.BufferGeometry) {
-  const tmpVN = new THREE.Vector3();
-  const tmpUV = new THREE.Vector3();
+const tmpNormalMat = new THREE.Matrix3();
+const tmpVN = new THREE.Vector3();
+const tmpUV = new THREE.Vector3();
+export function applyUVProjection(
+  geometry: THREE.BufferGeometry,
+  xform: THREE.Matrix4
+) {
+  tmpNormalMat.getNormalMatrix(xform);
 
   const positionAttr = geometry.getAttribute('position');
   const normalAttr = geometry.getAttribute('normal');
@@ -69,9 +74,12 @@ export function applyUVProjection(geometry: THREE.BufferGeometry) {
 
   for (let i = 0; i < vertexCount; i += 1) {
     tmpVN.fromArray(normalAttr.array, i * 3);
+    tmpVN.applyMatrix3(tmpNormalMat);
     const uvMatrix = getUVMatrix(tmpVN);
 
     tmpUV.fromArray(positionAttr.array, i * 3);
+    tmpUV.applyMatrix4(xform);
+
     tmpUV.multiplyScalar(0.125);
     tmpUV.applyMatrix4(uvMatrix);
     uvAttr.setXY(i, tmpUV.x, tmpUV.y);

@@ -3,7 +3,7 @@ import { MeshReflectorMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 
 import { Op, Shape, CSGRoot, CSGOp, CSGContent } from './csg';
-import { LevelMesh } from './levelMesh';
+import { LevelMesh, WorldUV } from './levelMesh';
 
 export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
   return (
@@ -11,6 +11,7 @@ export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
       <CSGContent>
         <mesh position={[0, 0, 1]}>
           <boxBufferGeometry args={[2, 10, 2]} />
+          <WorldUV />
         </mesh>
       </CSGContent>
 
@@ -29,6 +30,7 @@ export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
         <CSGContent>
           <mesh>
             <boxBufferGeometry args={[0.5, 0.5, 0.1]} />
+            <WorldUV />
           </mesh>
         </CSGContent>
       </mesh>
