@@ -31,12 +31,12 @@ function computeNormal(vertices: [number, number, number][]) {
 interface CSGInfo {
   items: CSG[];
   materialMap: Record<string, number>;
-  debugScene: THREE.Scene;
+  debugScene: THREE.Scene | null;
 }
 const CSGContext = React.createContext<CSGInfo>({
   items: [],
   materialMap: {},
-  debugScene: new THREE.Scene()
+  debugScene: null
 });
 
 const identity = new THREE.Matrix4();
@@ -78,18 +78,19 @@ export const CSGContent: React.FC<{
     items.push(csg);
 
     // also create a debug mesh
-    // @todo skip if debug not enabled
-    const debugGeom = csg.toGeometry(identity);
-    const debugMesh = new THREE.Mesh();
-    debugMesh.matrixAutoUpdate = false;
+    if (debugScene) {
+      const debugGeom = csg.toGeometry(identity);
+      const debugMesh = new THREE.Mesh();
+      debugMesh.matrixAutoUpdate = false;
 
-    debugMesh.geometry = debugGeom;
-    debugMesh.material = new THREE.MeshBasicMaterial({
-      color: '#ff0000',
-      wireframe: true,
-      depthTest: false
-    });
-    debugScene.add(debugMesh);
+      debugMesh.geometry = debugGeom;
+      debugMesh.material = new THREE.MeshBasicMaterial({
+        color: '#ff0000',
+        wireframe: true,
+        depthTest: false
+      });
+      debugScene.add(debugMesh);
+    }
   }, []);
 
   // show mesh only the first time
@@ -312,7 +313,8 @@ export const Op: React.FC<OpProps> = ({ type, children }) => {
 export const CSGRoot: React.FC<{
   materials: Record<string, React.ReactElement>;
   onReady: (csg: CSG, materialMap: Record<string, number>) => void;
-}> = ({ materials, onReady, children }) => {
+  debug?: boolean;
+}> = ({ materials, onReady, debug, children }) => {
   // read once
   const materialsRef = useRef(materials);
   const onReadyRef = useRef(onReady);
@@ -345,7 +347,7 @@ export const CSGRoot: React.FC<{
   const [localCtx] = useState<CSGInfo>(() => ({
     items: [],
     materialMap,
-    debugScene: new THREE.Scene()
+    debugScene: debug ? new THREE.Scene() : null
   }));
 
   const [geom, setGeom] = useState<THREE.BufferGeometry | null>(null);
@@ -371,6 +373,10 @@ export const CSGRoot: React.FC<{
   }, []);
 
   useFrame(({ gl, camera }) => {
+    if (!localCtx.debugScene) {
+      return;
+    }
+
     gl.autoClear = false;
     gl.render(localCtx.debugScene, camera);
     gl.autoClear = true;
