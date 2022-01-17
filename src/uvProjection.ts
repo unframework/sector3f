@@ -50,7 +50,6 @@ function getUVMatrix(normal: THREE.Vector3): THREE.Matrix4 {
   return uvMatrices[largestAxis + (elems[largestAxis] >= 0 ? 0 : 3)];
 }
 
-// @todo this is not exactly matching original world-space results
 const tmpNormalMat = new THREE.Matrix3();
 const tmpVN = new THREE.Vector3();
 const tmpUV = new THREE.Vector3();
@@ -76,6 +75,7 @@ export function applyUVProjection(
   for (let i = 0; i < vertexCount; i += 1) {
     tmpVN.fromArray(normalAttr.array, i * 3);
     tmpVN.applyMatrix3(tmpNormalMat);
+    tmpVN.multiplyScalar(-1); // quick hack to make things consistent with previous impl
     const uvMatrix = getUVMatrix(tmpVN);
 
     tmpUV.fromArray(positionAttr.array, i * 3);
