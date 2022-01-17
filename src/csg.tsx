@@ -6,7 +6,9 @@ import React, {
   useRef
 } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { useHelper } from '@react-three/drei';
 import * as THREE from 'three';
+import { VertexNormalsHelper } from 'three-stdlib';
 import { booleans, primitives, geometries, transforms } from '@jscad/modeling';
 import { CSG } from 'three-csg-ts';
 import { Vertex } from 'three-csg-ts/lib/esm/Vertex';
@@ -382,10 +384,13 @@ export const CSGRoot: React.FC<{
     gl.autoClear = true;
   }, 10);
 
+  const meshRef = useRef();
+  // useHelper(meshRef, VertexNormalsHelper, 0.25, 'red');
+
   return (
     <CSGContext.Provider value={localCtx}>
       {geom && (
-        <mesh castShadow receiveShadow>
+        <mesh ref={meshRef} castShadow receiveShadow>
           <primitive attach="geometry" object={geom} />
           {materialList}
         </mesh>
