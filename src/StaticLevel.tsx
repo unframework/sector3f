@@ -23,7 +23,7 @@ export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
         <planeGeometry args={[0.5, 0.5]} />
         <meshStandardMaterial
           color="#202020"
-          emissive={new THREE.Color(color || '#ffffa0')}
+          emissive={new THREE.Color(color || '#ffffe0')}
           emissiveIntensity={2}
         />
 

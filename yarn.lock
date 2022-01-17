@@ -118,10 +118,10 @@
     utility-types "^3.10.0"
     zustand "^3.5.1"
 
-"@react-three/lightmap@^0.0.5":
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/@react-three/lightmap/-/lightmap-0.0.5.tgz#489e81d42bc474eb528558bc274d475d3071c1f0"
-  integrity sha512-Hbg10fS7YDzXiU5EVrQLu67BCvGSTLIlPDYxwabIat054e/zzXm+7JeJSwL2xVygxwufrOLtBHhNA/pbVqsSZQ==
+"@react-three/lightmap@^0.0.7":
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/@react-three/lightmap/-/lightmap-0.0.7.tgz#06c4ecc85c3c5c035ea1476ae77b7707a46ed60c"
+  integrity sha512-NDqion9eUwR4TdBLLF/jAm+PctS9mVAdHk7cgp6GQQg2wIe4LDAD46tzR6nXIipBFKpHnyT5M0xPQZQ6I+Ov7A==
   dependencies:
     potpack "^1.0.1"
 
