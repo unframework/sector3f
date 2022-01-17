@@ -50,6 +50,7 @@ function getUVMatrix(normal: THREE.Vector3): THREE.Matrix4 {
   return uvMatrices[largestAxis + (elems[largestAxis] >= 0 ? 0 : 3)];
 }
 
+// @todo this is not exactly matching original world-space results
 const tmpNormalMat = new THREE.Matrix3();
 const tmpVN = new THREE.Vector3();
 const tmpUV = new THREE.Vector3();
