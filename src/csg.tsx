@@ -70,8 +70,6 @@ function CSG_fromBoxGeometry(
     throw new Error('BoxBufferGeometry should have 12 faces');
   }
 
-  console.log(geom);
-
   polys = [];
 
   for (const group of faceGroups) {
@@ -365,8 +363,10 @@ export const CSGRoot: React.FC<{
 
     // @todo use root's world matrix
     const geomResult = csg.toGeometry(identity);
-    geomResult.index = null; // trigger lightmapper's own vertex "welding" logic @todo this properly
-    setGeom(geomResult);
+
+    // remove index to trigger lightmapper's own vertex "welding" logic @todo this in the CSG library
+    // which will respect the group ranges and keep those faces separate
+    setGeom(geomResult.toNonIndexed());
 
     // notify downstream code
     onReadyRef.current(csg, materialMap);
