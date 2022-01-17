@@ -309,11 +309,17 @@ export const CSGOp: React.FC<CSGOpProps> = ({ type, children }) => {
   return <CSGContext.Provider value={localCtx}>{children}</CSGContext.Provider>;
 };
 
-export const CSGRoot: React.FC<{
+export interface CSGRootProps {
   materials: Record<string, React.ReactElement>;
   onReady: (csg: CSG, materialMap: Record<string, number>) => void;
   debug?: boolean;
-}> = ({ materials, onReady, debug, children }) => {
+}
+export const CSGRoot: React.FC<CSGRootProps> = ({
+  materials,
+  onReady,
+  debug,
+  children
+}) => {
   // read once
   const materialsRef = useRef(materials);
   const onReadyRef = useRef(onReady);

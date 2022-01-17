@@ -2,19 +2,16 @@ import React, { useState } from 'react';
 import { booleans, primitives, geometries } from '@jscad/modeling';
 import { Polygon } from 'three-csg-ts/lib/esm/Polygon'; // @todo fix exports upstream
 import { Vertex } from 'three-csg-ts/lib/esm/Vertex'; // @todo fix exports upstream
-import { useFrame, useLoader } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { Lightmap } from '@react-three/lightmap';
 import * as THREE from 'three';
 import * as b2 from '@flyover/box2d';
 
 import { Body, useZQueryProvider, ZQuery } from './physics';
-import { CSGRoot } from './csg';
+import { CSGRoot, CSGRootProps } from './csg';
 import { applyUVProjection } from './uvProjection';
 import { ThreeDummy } from './scene';
 import { DebugOverlayWidgets } from './lmDebug';
-
-// texture from https://opengameart.org/content/metalstone-textures by Spiney
-import testTextureUrl from './ft_conc01_c.png';
 
 // temp math helpers
 const tmpNormal = new THREE.Vector3();
@@ -151,17 +148,15 @@ export const WorldUV: React.FC = ({ children }) => {
   );
 };
 
-export const LevelMesh: React.FC = ({ children }) => {
+export const LevelMesh: React.FC<{ materials: CSGRootProps['materials'] }> = ({
+  materials,
+  children
+}) => {
   const [floorBody, setFloorBody] = useState<React.ReactElement | null>(null);
   const [zQuery, setZQuery] = useState<ZQuery | null>(null);
   const [lightmapActive, setLightmapActive] = useState(false);
 
   useZQueryProvider(zQuery);
-
-  const testTexture = useLoader(THREE.TextureLoader, testTextureUrl);
-  testTexture.wrapS = THREE.RepeatWrapping;
-  testTexture.wrapT = THREE.RepeatWrapping;
-  // testTexture.magFilter = THREE.NearestFilter;
 
   return (
     <Lightmap
@@ -173,10 +168,7 @@ export const LevelMesh: React.FC = ({ children }) => {
       <DebugOverlayWidgets />
 
       <CSGRoot
-        materials={{
-          default: <meshStandardMaterial map={testTexture} />,
-          red: <meshStandardMaterial color="#ff8080" />
-        }}
+        materials={materials}
         onReady={(csg, materialMap) => {
           const matIndex = materialMap['default'];
           const polys = csg

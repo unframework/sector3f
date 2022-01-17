@@ -1,9 +1,13 @@
 import React from 'react';
+import { useLoader } from '@react-three/fiber';
 import { MeshReflectorMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 
 import { CSGRoot, CSGOp, CSGContent } from './csg';
 import { LevelMesh, WorldUV } from './levelMesh';
+
+// texture from https://opengameart.org/content/metalstone-textures by Spiney
+import testTextureUrl from './ft_conc01_c.png';
 
 export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
   return (
@@ -42,11 +46,21 @@ export const StaticLevel: React.FC = () => {
   const rampMatrix = new THREE.Matrix4();
   rampMatrix.makeShear(0, 1, 0, 0, 0, 0);
 
+  const testTexture = useLoader(THREE.TextureLoader, testTextureUrl);
+  testTexture.wrapS = THREE.RepeatWrapping;
+  testTexture.wrapT = THREE.RepeatWrapping;
+  // testTexture.magFilter = THREE.NearestFilter;
+
   return (
     <>
-      <LevelMesh>
+      <LevelMesh
+        materials={{
+          default: <meshStandardMaterial map={testTexture} />,
+          red: <meshStandardMaterial color="#ff8080" />
+        }}
+      >
         <group matrix={rampMatrix} matrixAutoUpdate={false}>
-          <CSGContent>
+          <CSGContent material="red">
             <mesh position={[-2, 1, 1.5]}>
               <boxBufferGeometry args={[4, 2, 3]} />
               <WorldUV />
