@@ -50,7 +50,7 @@ const identity = new THREE.Matrix4();
 const BOX_FACE_INDICES = [0, 1, 4, 5];
 function CSG_fromBoxGeometry(
   geom: THREE.BoxBufferGeometry,
-  objectIndex: number
+  objectIndex: number | number[]
 ) {
   let polys = [];
   const faceGroups = geom.groups;
@@ -107,7 +107,16 @@ function CSG_fromBoxGeometry(
       );
     }
 
-    polys.push(new Polygon(vertices, objectIndex));
+    const groupObjectIndex = Array.isArray(objectIndex)
+      ? objectIndex[group.materialIndex || 0]
+      : objectIndex;
+    if (groupObjectIndex === undefined) {
+      throw new Error(
+        'missing material index for group: ' + group.materialIndex
+      );
+    }
+
+    polys.push(new Polygon(vertices, groupObjectIndex));
   }
   return polys.filter(p => !isNaN(p.plane.normal.x));
 }
@@ -175,7 +184,7 @@ function CSG_fromGeometry(geom: THREE.BufferGeometry, objectIndex?: any) {
 
 // CSG polygon generation that defers to box-specific heuristic as needed
 // @todo submit upstream?
-function CSG_fromMesh(mesh: THREE.Mesh, objectIndex: number): CSG {
+function CSG_fromMesh(mesh: THREE.Mesh, objectIndex: number | number[]): CSG {
   const ttvv0 = new THREE.Vector3();
   const tmpm3 = new THREE.Matrix3();
   tmpm3.getNormalMatrix(mesh.matrix);
@@ -196,7 +205,7 @@ function CSG_fromMesh(mesh: THREE.Mesh, objectIndex: number): CSG {
 }
 
 export const CSGContent: React.FC<{
-  material?: string;
+  material?: string | string[];
   children: React.ReactElement<'mesh'>;
 }> = ({ material, children }) => {
   // read once
@@ -214,9 +223,19 @@ export const CSGContent: React.FC<{
     }
 
     const materialName = materialRef.current || 'default';
-    const materialIndex = materialMap[materialName];
+    const materialIndex = Array.isArray(materialName)
+      ? materialName.map(item => materialMap[item])
+      : materialMap[materialName];
+
     if (materialIndex === undefined) {
       throw new Error('cannot find material: ' + materialName);
+    }
+
+    if (
+      Array.isArray(materialIndex) &&
+      materialIndex.some(item => item === undefined)
+    ) {
+      throw new Error('cannot find one of the materials: ' + materialName);
     }
 
     // mark for hiding later

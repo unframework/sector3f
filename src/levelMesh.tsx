@@ -170,10 +170,12 @@ export const LevelMesh: React.FC<{ materials: CSGRootProps['materials'] }> = ({
       <CSGRoot
         materials={materials}
         onReady={(csg, materialMap) => {
-          const matIndex = materialMap['default'];
+          const matIndexes = ['default', 'floorLight'].map(
+            item => materialMap[item]
+          );
           const polys = csg
             .toPolygons()
-            .filter(item => item.shared === matIndex);
+            .filter(item => matIndexes.includes(item.shared));
 
           const [floorBody, queryWorld] = createFloorFromVolume(polys);
           setFloorBody(floorBody);

@@ -55,7 +55,14 @@ export const StaticLevel: React.FC = () => {
     <>
       <LevelMesh
         materials={{
-          default: <meshStandardMaterial map={concreteTexture} />
+          default: <meshStandardMaterial map={concreteTexture} />,
+          floorLight: (
+            <meshStandardMaterial
+              color="#f0f8ff"
+              emissive={new THREE.Color('#f0f8ff')}
+              emissiveIntensity={0.4}
+            />
+          )
         }}
       >
         {/*<group matrix={rampMatrix} matrixAutoUpdate={false}>
@@ -71,14 +78,31 @@ export const StaticLevel: React.FC = () => {
           <Corridor />
         </group>
         <group position={[1, 2, 0]}>
-          <CSGContent>
-            <mesh position={[0, 0, 1]}>
-              <boxBufferGeometry args={[4, 4, 2]} />
-              <WorldUV />
-            </mesh>
-          </CSGContent>
+          <CSGOp type="subtract">
+            <CSGContent
+              material={[
+                'default',
+                'default',
+                'default',
+                'default',
+                'default',
+                'floorLight'
+              ]}
+            >
+              <mesh position={[0, 0, 1]}>
+                <boxBufferGeometry args={[4, 4, 2]} />
+                <WorldUV />
+              </mesh>
+            </CSGContent>
+            <CSGContent>
+              <mesh position={[0, 0, -0.099]}>
+                <boxBufferGeometry args={[3.8, 3.8, 0.2]} />
+                <WorldUV />
+              </mesh>
+            </CSGContent>
+          </CSGOp>
 
-          <mesh
+          {/*<mesh
             position={[0, 0, 1.95]}
             rotation={new THREE.Euler(Math.PI, 0, 0)}
             receiveShadow
@@ -89,7 +113,7 @@ export const StaticLevel: React.FC = () => {
               emissive={new THREE.Color('#f0f8ff')}
               emissiveIntensity={1}
             />
-          </mesh>
+          </mesh>*/}
         </group>
       </LevelMesh>
 
