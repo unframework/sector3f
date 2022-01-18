@@ -7,7 +7,7 @@ import { CSGRoot, CSGOp, CSGContent } from './csg';
 import { LevelMesh, WorldUV } from './levelMesh';
 
 // texture from https://opengameart.org/content/metalstone-textures by Spiney
-import testTextureUrl from './ft_conc01_c.png';
+import concreteTextureUrl from './ft_conc01_c.png';
 
 export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
   return (
@@ -42,56 +42,56 @@ export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
   );
 };
 
-export const StaticLevel: React.FC = () => {
-  const rampMatrix = new THREE.Matrix4();
-  rampMatrix.makeShear(0, 1, 0, 0, 0, 0);
+const rampMatrix = new THREE.Matrix4();
+rampMatrix.makeShear(0, 0.5, 0, 0, 0, 0);
 
-  const testTexture = useLoader(THREE.TextureLoader, testTextureUrl);
-  testTexture.wrapS = THREE.RepeatWrapping;
-  testTexture.wrapT = THREE.RepeatWrapping;
-  // testTexture.magFilter = THREE.NearestFilter;
+export const StaticLevel: React.FC = () => {
+  const concreteTexture = useLoader(THREE.TextureLoader, concreteTextureUrl);
+  concreteTexture.wrapS = THREE.RepeatWrapping;
+  concreteTexture.wrapT = THREE.RepeatWrapping;
+  // concreteTexture.magFilter = THREE.NearestFilter;
 
   return (
     <>
       <LevelMesh
         materials={{
-          default: <meshStandardMaterial map={testTexture} />,
-          red: <meshStandardMaterial color="#ff8080" />
+          default: <meshStandardMaterial map={concreteTexture} />
         }}
       >
-        <group matrix={rampMatrix} matrixAutoUpdate={false}>
-          <CSGContent material="red">
+        {/*<group matrix={rampMatrix} matrixAutoUpdate={false}>
+          <CSGContent>
             <mesh position={[-2, 1, 1.5]}>
               <boxBufferGeometry args={[4, 2, 3]} />
               <WorldUV />
             </mesh>
           </CSGContent>
-        </group>
+        </group>*/}
 
-        <group position={[1, 1, 0]}>
+        <group position={[1, -5, 0]}>
           <Corridor />
         </group>
-        <group position={[1, 9, 0]}>
-          <Corridor />
-        </group>
-        <group position={[9, 1, 0]}>
-          <Corridor color="#000000" />
-        </group>
-        <group position={[9, 9, 0]}>
-          <Corridor color="#000000" />
-        </group>
-        <group position={[5, -3, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <Corridor />
-        </group>
-        <group position={[5, 5, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <Corridor color="#c08000" />
-        </group>
-        <group position={[5, 13, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <Corridor color="#000000" />
+        <group position={[1, 2, 0]}>
+          <CSGContent>
+            <mesh position={[0, 0, 1]}>
+              <boxBufferGeometry args={[4, 4, 2]} />
+              <WorldUV />
+            </mesh>
+          </CSGContent>
+
+          <mesh
+            position={[0, 0, 1.95]}
+            rotation={new THREE.Euler(Math.PI, 0, 0)}
+            receiveShadow
+          >
+            <planeGeometry args={[1, 1]} />
+            <meshStandardMaterial
+              color="#202020"
+              emissive={new THREE.Color('#f0f8ff')}
+              emissiveIntensity={1}
+            />
+          </mesh>
         </group>
       </LevelMesh>
-
-      <pointLight color="#f0f0ff" position={[6.5, 12.5, 0.25]} castShadow />
 
       <ambientLight color="#202020" />
     </>

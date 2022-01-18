@@ -49,11 +49,11 @@ export const MainStage: React.FC = () => {
           <StaticLevel />
         </React.Suspense>
 
-        <mesh position={[3.5, 13, 0.4]} castShadow receiveShadow>
+        {/*<mesh position={[3.5, 13, 0.4]} castShadow receiveShadow>
           <boxGeometry args={[0.8, 0.8, 0.8]} />
           <meshStandardMaterial color="#ff00ff" roughness={0.9} />
           <Body />
-        </mesh>
+        </mesh>*/}
         {/*<mesh position={[1, 2, 0.5]} castShadow receiveShadow>
           <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial color="#80c880" roughness={0.9} />

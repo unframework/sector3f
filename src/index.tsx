@@ -22,11 +22,7 @@ const App: React.FC = () => {
         shadows
         style={{ height: '100vh' }}
         gl={{
-          alpha: false,
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.2,
-
-          outputEncoding: THREE.sRGBEncoding
+          alpha: false
         }}
       >
         {/*
