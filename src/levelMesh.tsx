@@ -1,27 +1,36 @@
 import React, { useState } from 'react';
 import { booleans, primitives, geometries } from '@jscad/modeling';
-import { useFrame, useLoader } from '@react-three/fiber';
+import { Polygon } from 'three-csg-ts/lib/esm/Polygon'; // @todo fix exports upstream
+import { Vertex } from 'three-csg-ts/lib/esm/Vertex'; // @todo fix exports upstream
+import { useFrame } from '@react-three/fiber';
 import { Lightmap } from '@react-three/lightmap';
 import * as THREE from 'three';
 import * as b2 from '@flyover/box2d';
 
 import { Body, useZQueryProvider, ZQuery } from './physics';
-import { CSGModel } from './csg';
+import { CSGRoot, CSGRootProps } from './csg';
 import { applyUVProjection } from './uvProjection';
+import { ThreeDummy } from './scene';
 import { DebugOverlayWidgets } from './lmDebug';
-
-// texture from https://opengameart.org/content/metalstone-textures by Spiney
-import testTextureUrl from './ft_conc01_c.png';
 
 // temp math helpers
 const tmpNormal = new THREE.Vector3();
 const tmpA = new THREE.Vector3();
 const tmpB = new THREE.Vector3();
 
-function computeNormal(vertices: [number, number, number][]) {
-  tmpNormal.fromArray(vertices[0]);
-  tmpA.fromArray(vertices[1]);
-  tmpB.fromArray(vertices[2]);
+function computeNormal(vertices: Vertex[]) {
+  tmpNormal.x = vertices[0].pos.x;
+  tmpNormal.y = vertices[0].pos.y;
+  tmpNormal.z = vertices[0].pos.z;
+
+  tmpA.x = vertices[1].pos.x;
+  tmpA.y = vertices[1].pos.y;
+  tmpA.z = vertices[1].pos.z;
+
+  tmpB.x = vertices[2].pos.x;
+  tmpB.y = vertices[2].pos.y;
+  tmpB.z = vertices[2].pos.z;
+
   tmpA.sub(tmpNormal);
   tmpB.sub(tmpNormal);
   tmpNormal.crossVectors(tmpA, tmpB);
@@ -36,7 +45,7 @@ interface QueryFixtureData {
 }
 
 function createFloorFromVolume(
-  polys: geometries.poly3.Poly3[]
+  polys: Polygon[]
 ): [React.ReactElement, b2.World] {
   // set up a world used just for querying the polygons in 2D
   // @todo plug in Z-query to the containing physics context
@@ -56,7 +65,6 @@ function createFloorFromVolume(
 
     // check plane normal and offset
     computeNormal(vertices);
-    tmpNormal.multiplyScalar(-1); // flip the normal
 
     // @todo allow a bit of slope - this is cos(45deg) with extra margin
     if (tmpNormal.z < 0.701) {
@@ -65,9 +73,9 @@ function createFloorFromVolume(
 
     // get plane equation
     const planeOffset =
-      tmpNormal.x * vertices[0][0] +
-      tmpNormal.y * vertices[0][1] +
-      tmpNormal.z * vertices[0][2];
+      tmpNormal.x * vertices[0].pos.x +
+      tmpNormal.y * vertices[0].pos.y +
+      tmpNormal.z * vertices[0].pos.z;
 
     const queryData: QueryFixtureData = {
       nx: tmpNormal.x,
@@ -80,12 +88,10 @@ function createFloorFromVolume(
     const points: [number, number][] = [];
     const b2Points: b2.Vec2[] = [];
     for (let j = 0; j < vertices.length; j += 1) {
-      const vert = vertices[j];
-      points.push([vert[0], vert[1]]);
-      b2Points.push(new b2.Vec2(vert[0], vert[1]));
+      const vert = vertices[j].pos;
+      points.push([vert.x, vert.y]);
+      b2Points.push(new b2.Vec2(vert.x, vert.y));
     }
-
-    points.reverse(); // invert to make "additive", for union to work
 
     floorPolygons.push(primitives.polygon({ points }));
 
@@ -97,6 +103,7 @@ function createFloorFromVolume(
   }
 
   // now combine everything into one to create wall chain shapes
+  // @todo use a different library than JSCAD?
   const combinedGeom = booleans.union(floorPolygons);
   const outlines = geometries.geom2.toOutlines(combinedGeom);
 
@@ -109,19 +116,9 @@ function createFloorFromVolume(
     return chain;
   });
 
-  // debug view for querying
-  const debugScene = new THREE.Scene();
-  debugScene.name = 'Floor debug';
-
   // return a ready-to-go component
   // @todo deference input data for better memory usage?
   const Floor: React.FC = () => {
-    useFrame(({ gl, camera }) => {
-      gl.autoClear = false;
-      gl.render(debugScene, camera);
-      gl.autoClear = true;
-    }, 20);
-
     return (
       <Body
         isStatic // static body ensures continuous collision detection is enabled, to avoid tunnelling
@@ -133,31 +130,50 @@ function createFloorFromVolume(
   return [<Floor />, queryWorld];
 }
 
-export const LevelMesh: React.FC = ({ children }) => {
+export const WorldUV: React.FC = ({ children }) => {
+  return (
+    <ThreeDummy
+      init={obj => {
+        if (obj instanceof THREE.Mesh) {
+          const geom = obj.geometry;
+          if (geom instanceof THREE.BufferGeometry) {
+            // @todo check if needs update?
+            obj.updateWorldMatrix(true, false);
+
+            applyUVProjection(geom, obj.matrixWorld);
+          }
+        }
+      }}
+    />
+  );
+};
+
+export const LevelMesh: React.FC<{ materials: CSGRootProps['materials'] }> = ({
+  materials,
+  children
+}) => {
   const [floorBody, setFloorBody] = useState<React.ReactElement | null>(null);
   const [zQuery, setZQuery] = useState<ZQuery | null>(null);
   const [lightmapActive, setLightmapActive] = useState(false);
 
   useZQueryProvider(zQuery);
 
-  const testTexture = useLoader(THREE.TextureLoader, testTextureUrl);
-  testTexture.wrapS = THREE.RepeatWrapping;
-  testTexture.wrapT = THREE.RepeatWrapping;
-  // testTexture.magFilter = THREE.NearestFilter;
-
   return (
     <Lightmap
       disabled={!lightmapActive}
       texelsPerUnit={1}
+      bounceMultiplier={20}
       samplerSettings={{ targetSize: 32 }}
     >
       <DebugOverlayWidgets />
 
-      <CSGModel
-        mesh={(material, geometry, polys) => {
-          // @todo move per-mesh stuff in child ThreeDummy
-          // add our own extra UV logic
-          applyUVProjection(geometry);
+      <CSGRoot
+        materials={materials}
+        onReady={(csg, materialMap) => {
+          const matIndex = materialMap['default'];
+          const polys = csg
+            .toPolygons()
+            .filter(item => item.shared === matIndex);
 
           const [floorBody, queryWorld] = createFloorFromVolume(polys);
           setFloorBody(floorBody);
@@ -185,22 +201,13 @@ export const LevelMesh: React.FC = ({ children }) => {
 
           const zQueryImpl: ZQuery = (x, y) => {
             tmpQueryPos.Set(x, y);
-
             qfOutput = null;
             queryWorld.QueryFixturePoint(tmpQueryPos, qfCallback);
-
             return qfOutput;
           };
 
           setZQuery(() => zQueryImpl); // wrap in another function to avoid confusing useState
 
-          return (
-            <mesh geometry={geometry} castShadow receiveShadow>
-              <meshStandardMaterial map={testTexture} />
-            </mesh>
-          );
-        }}
-        onReady={() => {
           // proceed with lightmapping passes
           setLightmapActive(true);
         }}
@@ -208,7 +215,7 @@ export const LevelMesh: React.FC = ({ children }) => {
         {children}
 
         {floorBody}
-      </CSGModel>
+      </CSGRoot>
     </Lightmap>
   );
 };

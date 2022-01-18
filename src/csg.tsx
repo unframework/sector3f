@@ -6,8 +6,14 @@ import React, {
   useRef
 } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { useHelper } from '@react-three/drei';
 import * as THREE from 'three';
+import { VertexNormalsHelper } from 'three-stdlib';
 import { booleans, primitives, geometries, transforms } from '@jscad/modeling';
+import { CSG } from 'three-csg-ts';
+import { Vertex } from 'three-csg-ts/lib/esm/Vertex';
+import { Polygon } from 'three-csg-ts/lib/esm/Polygon';
+import { Vector } from 'three-csg-ts/lib/esm/Vector';
 
 import { ThreeDummy } from './scene';
 
@@ -26,225 +32,356 @@ function computeNormal(vertices: [number, number, number][]) {
   tmpNormal.normalize();
 }
 
-// all the geometry normals are flipped to reflect the subtractive mode of boolean logic
-// @todo rejoin the split-up polygons (with matching plane only) to avoid seams
-function createBufferFromPolys(polys: geometries.poly3.Poly3[]) {
-  const geometry = new THREE.BufferGeometry();
+// context for gathering shape arguments for containing operation
+interface CSGInfo {
+  items: CSG[];
+  materialMap: Record<string, number>;
+  debugScene: THREE.Scene | null;
+}
+const CSGContext = React.createContext<CSGInfo>({
+  items: [],
+  materialMap: {},
+  debugScene: null
+});
 
-  let vertexCount = 0;
-  let faceCount = 0;
-  for (let i = 0; i < polys.length; i += 1) {
-    vertexCount += polys[i].vertices.length;
-    faceCount += polys[i].vertices.length - 2;
+const identity = new THREE.Matrix4();
+
+// special heuristic CSG shape generation based on box geometry
+const BOX_FACE_INDICES = [0, 1, 4, 5];
+function CSG_fromBoxGeometry(
+  geom: THREE.BoxBufferGeometry,
+  objectIndex: number
+) {
+  let polys = [];
+  const faceGroups = geom.groups;
+  if (faceGroups.length !== 6) {
+    throw new Error('expecting 6 BoxBufferGeometry face groups');
   }
 
-  const indexAttr = new THREE.Uint16BufferAttribute(faceCount * 3, 3);
-  indexAttr.count = faceCount * 3; // this seems to be necessary for correct display?
-  const positionAttr = new THREE.Float32BufferAttribute(vertexCount * 3, 3);
-  const normalAttr = new THREE.Float32BufferAttribute(vertexCount * 3, 3);
+  const posattr = geom.attributes.position;
+  const normalattr = geom.attributes.normal;
+  const uvattr = geom.attributes.uv;
+  const colorattr = geom.attributes.color;
 
-  let vertexIndex = 0;
-  let faceIndex = 0;
-  for (let i = 0; i < polys.length; i += 1) {
-    const poly = polys[i];
-    const vertices = poly.vertices;
+  if (!geom.index) {
+    throw new Error('BoxBufferGeometry should have index attr');
+  }
+  const index = geom.index.array;
 
-    // get plane normal (not always available on polygon)
-    computeNormal(vertices);
-    tmpNormal.multiplyScalar(-1); // flip the normal
+  if (geom.index.count !== 3 * 12) {
+    throw new Error('BoxBufferGeometry should have 12 faces');
+  }
 
-    const firstVertexIndex = vertexIndex;
+  polys = [];
 
-    for (let j = 0; j < vertices.length; j += 1) {
-      const vert = vertices[j];
-      positionAttr.setXYZ(vertexIndex, vert[0], vert[1], vert[2]);
-      normalAttr.setXYZ(vertexIndex, tmpNormal.x, tmpNormal.y, tmpNormal.z);
+  for (const group of faceGroups) {
+    if (group.count !== 6) {
+      throw new Error('expecting 2 faces in box face group');
+    }
 
-      if (j >= 2) {
-        // use flipped normal order
-        indexAttr.setXYZ(
-          faceIndex,
-          firstVertexIndex,
-          vertexIndex,
-          vertexIndex - 1
-        );
-        faceIndex += 1;
+    const vertices = new Array(4);
+
+    for (let j = 0; j < 4; j++) {
+      const vi = index[group.start + BOX_FACE_INDICES[j]];
+      const vp = vi * 3;
+      const vt = vi * 2;
+      const x = posattr.array[vp];
+      const y = posattr.array[vp + 1];
+      const z = posattr.array[vp + 2];
+      const nx = normalattr.array[vp];
+      const ny = normalattr.array[vp + 1];
+      const nz = normalattr.array[vp + 2];
+      const u = uvattr?.array[vt];
+      const v = uvattr?.array[vt + 1];
+
+      vertices[j] = new Vertex(
+        new Vector(x, y, z),
+        new Vector(nx, ny, nz),
+        new Vector(u, v, 0),
+        colorattr &&
+          new Vector(
+            colorattr.array[vt],
+            colorattr.array[vt + 1],
+            colorattr.array[vt + 2]
+          )
+      );
+    }
+
+    polys.push(new Polygon(vertices, objectIndex));
+  }
+  return polys.filter(p => !isNaN(p.plane.normal.x));
+}
+
+// original CSG polygon generation from upstream
+function CSG_fromGeometry(geom: THREE.BufferGeometry, objectIndex?: any) {
+  let polys = [];
+  const posattr = geom.attributes.position;
+  const normalattr = geom.attributes.normal;
+  const uvattr = geom.attributes.uv;
+  const colorattr = geom.attributes.color;
+  const grps = geom.groups;
+  let index;
+
+  if (geom.index) {
+    index = geom.index.array;
+  } else {
+    index = new Array((posattr.array.length / posattr.itemSize) | 0);
+    for (let i = 0; i < index.length; i++) index[i] = i;
+  }
+
+  const triCount = (index.length / 3) | 0;
+  polys = new Array(triCount);
+
+  for (let i = 0, pli = 0, l = index.length; i < l; i += 3, pli++) {
+    const vertices = new Array(3);
+    for (let j = 0; j < 3; j++) {
+      const vi = index[i + j];
+      const vp = vi * 3;
+      const vt = vi * 2;
+      const x = posattr.array[vp];
+      const y = posattr.array[vp + 1];
+      const z = posattr.array[vp + 2];
+      const nx = normalattr.array[vp];
+      const ny = normalattr.array[vp + 1];
+      const nz = normalattr.array[vp + 2];
+      const u = uvattr?.array[vt];
+      const v = uvattr?.array[vt + 1];
+
+      vertices[j] = new Vertex(
+        new Vector(x, y, z),
+        new Vector(nx, ny, nz),
+        new Vector(u, v, 0),
+        colorattr &&
+          new Vector(
+            colorattr.array[vt],
+            colorattr.array[vt + 1],
+            colorattr.array[vt + 2]
+          )
+      );
+    }
+
+    if (objectIndex === undefined && grps && grps.length > 0) {
+      for (const grp of grps) {
+        if (index[i] >= grp.start && index[i] < grp.start + grp.count) {
+          polys[pli] = new Polygon(vertices, grp.materialIndex);
+        }
       }
-
-      vertexIndex += 1;
+    } else {
+      polys[pli] = new Polygon(vertices, objectIndex);
     }
   }
-
-  geometry.setIndex(indexAttr);
-  geometry.setAttribute('position', positionAttr);
-  geometry.setAttribute('normal', normalAttr);
-
-  return geometry;
+  return polys.filter(p => !isNaN(p.plane.normal.x));
 }
 
-const GeomContext = React.createContext<{
-  geoms: geometries.geom3.Geom3[];
-  debugScene: THREE.Scene;
-}>({ geoms: [], debugScene: new THREE.Scene() });
+// CSG polygon generation that defers to box-specific heuristic as needed
+// @todo submit upstream?
+function CSG_fromMesh(mesh: THREE.Mesh, objectIndex: number): CSG {
+  const ttvv0 = new THREE.Vector3();
+  const tmpm3 = new THREE.Matrix3();
+  tmpm3.getNormalMatrix(mesh.matrix);
 
-const IDENTITY_MAT4 = new THREE.Matrix4();
-
-function createGeom(props: ShapeProps): geometries.geom3.Geom3 {
-  switch (props.type) {
-    case 'cuboid':
-      return primitives.cuboid(props);
-    case 'cylinder':
-      return primitives.cylinder(props);
-    default:
-      throw new Error(
-        'unknown shape type: ' +
-          ((props as unknown) as Record<string, unknown>).type
-      );
+  const polys =
+    mesh.geometry instanceof THREE.BoxBufferGeometry
+      ? CSG_fromBoxGeometry(mesh.geometry, objectIndex)
+      : CSG_fromGeometry(mesh.geometry, objectIndex);
+  for (let i = 0; i < polys.length; i++) {
+    const p = polys[i];
+    for (let j = 0; j < p.vertices.length; j++) {
+      const v = p.vertices[j];
+      v.pos.copy(ttvv0.copy(v.pos.toVector3()).applyMatrix4(mesh.matrix));
+      v.normal.copy(ttvv0.copy(v.normal.toVector3()).applyMatrix3(tmpm3));
+    }
   }
+  return CSG.fromPolygons(polys);
 }
 
-export type AllShapeOptions =
-  | ({
-      type: 'cuboid';
-    } & primitives.CuboidOptions)
-  | ({
-      type: 'cylinder';
-    } & primitives.CylinderOptions);
-
-export type ShapeProps = AllShapeOptions & {
+export const CSGContent: React.FC<{
   material?: string;
-};
+  children: React.ReactElement<'mesh'>;
+}> = ({ material, children }) => {
+  // read once
+  const materialRef = useRef(material);
 
-export const Shape: React.FC<ShapeProps> = (props, ref) => {
-  const { geoms, debugScene } = useContext(GeomContext);
+  const { items, materialMap, debugScene } = useContext(CSGContext);
 
-  const init = (obj3d: THREE.Object3D) => {
-    const geom = createGeom(props);
-    geom.color = (props.material === undefined ? null : props.material) as any;
+  const meshRef = useRef<THREE.Mesh>(null);
+  const [isCollected, setIsCollected] = useState(false);
 
-    // get world transform
-    // @todo proper logic that respects CSG root transform
-    obj3d.updateWorldMatrix(true, false); // update parents as well
-    const transformed = obj3d.matrixWorld.equals(IDENTITY_MAT4)
-      ? geom
-      : transforms.transform(obj3d.matrixWorld.toArray(), geom);
+  useLayoutEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh) {
+      throw new Error('expecting mesh content');
+    }
 
-    // no cleanup needed
-    geoms.push(transformed);
+    const materialName = materialRef.current || 'default';
+    const materialIndex = materialMap[materialName];
+    if (materialIndex === undefined) {
+      throw new Error('cannot find material: ' + materialName);
+    }
+
+    // mark for hiding later
+    setIsCollected(true);
+
+    // @todo check if needs update?
+    mesh.updateWorldMatrix(true, false);
+
+    mesh.matrix.copy(mesh.matrixWorld); // make CSG use world matrix @todo fix upstream
+    const csg = CSG_fromMesh(mesh, materialIndex);
+    mesh.matrix.identity(); // reset just in case
+
+    items.push(csg);
 
     // also create a debug mesh
-    // @todo skip if debug not enabled
-    const debugGeom = createBufferFromPolys(geom.polygons);
-    const debugMesh = new THREE.Mesh();
-    debugMesh.matrix.copy(obj3d.matrixWorld);
-    debugMesh.matrixAutoUpdate = false;
+    if (debugScene) {
+      const debugGeom = csg.toGeometry(identity);
+      const debugMesh = new THREE.Mesh();
+      debugMesh.matrixAutoUpdate = false;
 
-    debugMesh.geometry = debugGeom;
-    debugMesh.material = new THREE.MeshBasicMaterial({
-      color: '#ff0000',
-      wireframe: true,
-      depthTest: false
-    });
-    debugScene.add(debugMesh);
-  };
+      debugMesh.geometry = debugGeom;
+      debugMesh.material = new THREE.MeshBasicMaterial({
+        color: '#ff0000',
+        wireframe: true,
+        depthTest: false
+      });
+      debugScene.add(debugMesh);
+    }
+  }, []);
 
-  return <ThreeDummy init={init} />;
+  // show mesh only the first time
+  return isCollected ? null : React.cloneElement(children, { ref: meshRef });
 };
 
-export type OpProps = {
-  type: 'union' | 'subtract' | 'intersect';
-};
-export const Op: React.FC<OpProps> = ({ type, children }) => {
-  const { geoms, debugScene } = useContext(GeomContext);
+// dummy used as fallback
+const emptyCSG = CSG.fromPolygons([]);
 
-  const [localCtx] = useState(() => ({
-    geoms: [] as geometries.geom3.Geom3[],
-    debugScene
+export type CSGOpProps = {
+  type: 'union' | 'subtract' | 'intersect' | 'inverse';
+};
+export const CSGOp: React.FC<CSGOpProps> = ({ type, children }) => {
+  const { items, ...parentContext } = useContext(CSGContext);
+
+  const [localCtx] = useState<CSGInfo>(() => ({
+    ...parentContext,
+    items: []
   }));
   useLayoutEffect(() => {
     switch (type) {
       case 'union':
-        geoms.push(booleans.union(localCtx.geoms));
+        items.push(
+          localCtx.items.reduce(
+            (prev, item) => (prev ? prev.union(item) : item),
+            null as CSG | null
+          ) || emptyCSG
+        );
         return;
       case 'subtract':
-        geoms.push(booleans.subtract(localCtx.geoms));
+        items.push(
+          localCtx.items.reduce(
+            (prev, item) => (prev ? prev.subtract(item) : item),
+            null as CSG | null
+          ) || emptyCSG
+        );
         return;
       case 'intersect':
-        geoms.push(booleans.intersect(localCtx.geoms));
+        items.push(
+          localCtx.items.reduce(
+            (prev, item) => (prev ? prev.intersect(item) : item),
+            null as CSG | null
+          ) || emptyCSG
+        );
+        return;
+      case 'inverse':
+        // union the shapes before inverting
+        items.push(
+          (
+            localCtx.items.reduce(
+              (prev, item) => (prev ? prev.union(item) : item),
+              null as CSG | null
+            ) || emptyCSG
+          ).inverse()
+        );
         return;
       default:
         throw new Error('unknown op type: ' + type);
     }
-  }, [geoms, localCtx]);
+  }, [items, localCtx]);
 
-  return (
-    <GeomContext.Provider value={localCtx}>{children}</GeomContext.Provider>
-  );
+  return <CSGContext.Provider value={localCtx}>{children}</CSGContext.Provider>;
 };
 
-export const CSGModel: React.FC<{
-  defaultMaterial?: string;
-  mesh: (
-    material: string,
-    bufferGeometry: THREE.BufferGeometry,
-    polys: geometries.poly3.Poly3[]
-  ) => React.ReactElement | null;
-  onReady: () => void;
+export interface CSGRootProps {
+  materials: Record<string, React.ReactElement>;
+  onReady: (csg: CSG, materialMap: Record<string, number>) => void;
   debug?: boolean;
-}> = ({ defaultMaterial, mesh, onReady, debug, children }) => {
-  // avoid re-triggering effect (need to read prop only first time)
-  const defaultMaterialRef = useRef(defaultMaterial);
-  const meshRef = useRef(mesh);
+}
+export const CSGRoot: React.FC<CSGRootProps> = ({
+  materials,
+  onReady,
+  debug,
+  children
+}) => {
+  // read once
+  const materialsRef = useRef(materials);
   const onReadyRef = useRef(onReady);
 
-  const [localCtx] = useState(() => ({
-    geoms: [] as geometries.geom3.Geom3[],
-    debugScene: new THREE.Scene()
-  }));
-  const [meshContent, setMeshContent] = useState<React.ReactElement[] | null>(
-    null
+  // build map of sequential material indexes
+  const materialMap = useMemo(() => {
+    const result: Record<string, number> = {};
+    let count = 0;
+
+    for (const materialName of Object.keys(materialsRef.current)) {
+      result[materialName] = count;
+      count += 1;
+    }
+
+    return result;
+  }, []);
+
+  const materialList = useMemo(
+    () =>
+      Object.keys(materialsRef.current).map(mat =>
+        React.cloneElement(materialsRef.current[mat], {
+          key: mat,
+          attach: undefined, // clear just in case
+          attachArray: 'material'
+        })
+      ),
+    []
   );
 
-  // perform conversion from CSG volumes to mesh
+  const [localCtx] = useState<CSGInfo>(() => ({
+    items: [],
+    materialMap,
+    debugScene: debug ? new THREE.Scene() : null
+  }));
+
+  const [geom, setGeom] = useState<THREE.BufferGeometry | null>(null);
+
+  // collect CSG shapes
   useLayoutEffect(() => {
-    // @todo use union?
-    const volume = localCtx.geoms[0];
-    if (!volume) {
-      throw new Error('expected CSG volume result');
-    }
+    // union everything that bubbles up
+    const union =
+      localCtx.items.reduce(
+        (prev, item) => (prev ? prev.union(item) : item),
+        null as CSG | null
+      ) || emptyCSG;
 
-    const defaultMatName = defaultMaterialRef.current || 'default';
-    const polyListByMatName: Record<string, geometries.poly3.Poly3[]> = {};
-    for (const poly of volume.polygons) {
-      const polyMatProp = (poly.color as unknown) as string | null;
-      const matName = polyMatProp === null ? defaultMatName : polyMatProp;
+    // flip to show interior
+    const csg = union.inverse();
 
-      const polyList = (polyListByMatName[matName] =
-        polyListByMatName[matName] || []);
-      polyList.push(poly);
-    }
+    // @todo use root's world matrix
+    const geomResult = csg.toGeometry(identity);
 
-    const contentNodeList: React.ReactElement[] = [];
-    for (const materialName of Object.keys(polyListByMatName)) {
-      const polyList = polyListByMatName[materialName];
-      const bufferGeom = createBufferFromPolys(polyList);
+    // remove index to trigger lightmapper's own vertex "welding" logic @todo this in the CSG library
+    // which will respect the group ranges and keep those faces separate
+    setGeom(geomResult.toNonIndexed());
 
-      const contentNode = meshRef.current(materialName, bufferGeom, polyList);
-
-      if (contentNode) {
-        contentNodeList.push(
-          React.cloneElement(contentNode, { key: materialName })
-        );
-      }
-    }
-
-    setMeshContent(contentNodeList);
-
-    onReadyRef.current();
+    // notify downstream code
+    onReadyRef.current(csg, materialMap);
   }, []);
 
   useFrame(({ gl, camera }) => {
-    if (!debug) {
+    if (!localCtx.debugScene) {
       return;
     }
 
@@ -253,11 +390,19 @@ export const CSGModel: React.FC<{
     gl.autoClear = true;
   }, 10);
 
+  const meshRef = useRef();
+  // useHelper(meshRef, VertexNormalsHelper, 0.25, 'red');
+
   return (
-    <GeomContext.Provider value={localCtx}>
-      {meshContent}
+    <CSGContext.Provider value={localCtx}>
+      {geom && (
+        <mesh ref={meshRef} castShadow receiveShadow>
+          <primitive attach="geometry" object={geom} />
+          {materialList}
+        </mesh>
+      )}
 
       {children}
-    </GeomContext.Provider>
+    </CSGContext.Provider>
   );
 };
