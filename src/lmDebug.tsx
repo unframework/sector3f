@@ -35,28 +35,31 @@ export const DebugOverlayWidgets: React.FC = React.memo(() => {
   const { atlasTexture, outputTexture } = debugInfo;
 
   return (
-    <scene name="Debug Overlay" ref={debugSceneRef}>
-      {outputTexture && (
-        <mesh position={[85, 85, 0]}>
-          <planeBufferGeometry attach="geometry" args={[20, 20]} />
-          <meshBasicMaterial
-            attach="material"
-            map={outputTexture as any}
-            toneMapped={false}
-          />
-        </mesh>
-      )}
+    // hide from main scene
+    <group visible={false}>
+      <scene name="Debug Overlay" ref={debugSceneRef}>
+        {outputTexture && (
+          <mesh position={[85, 85, 0]}>
+            <planeBufferGeometry attach="geometry" args={[20, 20]} />
+            <meshBasicMaterial
+              attach="material"
+              map={outputTexture as any}
+              toneMapped={false}
+            />
+          </mesh>
+        )}
 
-      {atlasTexture && (
-        <mesh position={[85, 64, 0]}>
-          <planeBufferGeometry attach="geometry" args={[20, 20]} />
-          <meshBasicMaterial
-            attach="material"
-            map={atlasTexture as any}
-            toneMapped={false}
-          />
-        </mesh>
-      )}
-    </scene>
+        {atlasTexture && (
+          <mesh position={[85, 64, 0]}>
+            <planeBufferGeometry attach="geometry" args={[20, 20]} />
+            <meshBasicMaterial
+              attach="material"
+              map={atlasTexture as any}
+              toneMapped={false}
+            />
+          </mesh>
+        )}
+      </scene>
+    </group>
   );
 });
