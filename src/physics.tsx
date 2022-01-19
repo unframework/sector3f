@@ -398,3 +398,57 @@ export const Body: React.FC<{
 
   return <ThreeDummy init={init} />;
 };
+
+export const Sensor: React.FC<{
+  initShape: () => b2.Shape | b2.Shape[];
+}> = ({ initShape }) => {
+  const initShapeRef = useRef(initShape); // storing value only once
+
+  const info = useContext(PhysicsContext);
+  if (!info) {
+    throw new Error('expecting b2.World');
+  }
+
+  // initialize the physics object
+  const init = (referenceObject: THREE.Object3D) => {
+    const { world, bodyListeners } = info;
+
+    const bodyDef = new b2.BodyDef();
+    const fixDef = new b2.FixtureDef();
+
+    referenceObject.updateWorldMatrix(true, false); // @todo avoid if already updated?
+    tmpVector.set(0, 0, 0).applyMatrix4(referenceObject.matrixWorld);
+
+    bodyDef.type = b2.staticBody;
+    bodyDef.position.x = tmpVector.x;
+    bodyDef.position.y = tmpVector.y;
+
+    fixDef.density = 300.0;
+    fixDef.friction = 0.8;
+    fixDef.restitution = 0.0;
+    fixDef.isSensor = true;
+
+    // get set of shapes for this body
+    const shapes: b2.Shape[] = [];
+    const customShapes = initShapeRef.current();
+    if (Array.isArray(customShapes)) {
+      shapes.push(...customShapes);
+    } else {
+      shapes.push(customShapes);
+    }
+
+    // initialize the actual body object
+    const body = world.CreateBody(bodyDef);
+    shapes.forEach(shape => {
+      fixDef.shape = shape;
+      body.CreateFixture(fixDef);
+    });
+
+    // clean up
+    return () => {
+      world.DestroyBody(body);
+    };
+  };
+
+  return <ThreeDummy init={init} />;
+};

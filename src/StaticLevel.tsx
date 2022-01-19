@@ -1,4 +1,5 @@
 import React from 'react';
+import * as b2 from '@flyover/box2d';
 import { useLoader } from '@react-three/fiber';
 import { MeshReflectorMaterial } from '@react-three/drei';
 import { AutoUV2Ignore } from '@react-three/lightmap';
@@ -6,7 +7,7 @@ import * as THREE from 'three';
 
 import { CSGRoot, CSGOp, CSGContent } from './csg';
 import { LevelMesh, WorldUV } from './levelMesh';
-import { Body } from './physics';
+import { Body, Sensor } from './physics';
 
 // texture from https://opengameart.org/content/metalstone-textures by Spiney
 import concreteTextureUrl from './ft_conc01_c.png';
@@ -138,6 +139,14 @@ export const StaticLevel: React.FC = () => {
               <meshStandardMaterial color="#808080" />
               <Body isKinematic />
             </mesh>
+
+            <Sensor
+              initShape={() => {
+                const shape = new b2.PolygonShape();
+                shape.SetAsBox(2.5, 1.5, new b2.Vec2(0, -2.15));
+                return shape;
+              }}
+            />
           </AutoUV2Ignore>
 
           <pointLight
