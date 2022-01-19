@@ -156,14 +156,16 @@ export const StaticLevel: React.FC = () => {
             <group position={[0, -2.15, 0]}>
               <animated.mesh position={leftDoorPos as any} castShadow>
                 <boxBufferGeometry args={[1, 0.2, 2]} />
-                <meshStandardMaterial color="#808080" />
+                <meshStandardMaterial color="#a8b0b0" map={panelTexture} />
                 <Body isKinematic />
+                <WorldUV scale={0.25} />
               </animated.mesh>
 
               <animated.mesh position={rightDoorPos as any} castShadow>
                 <boxBufferGeometry args={[1, 0.2, 2]} />
-                <meshStandardMaterial color="#808080" />
+                <meshStandardMaterial color="#a8b0b0" map={panelTexture} />
                 <Body isKinematic />
+                <WorldUV scale={0.25} />
               </animated.mesh>
 
               <spotLight
