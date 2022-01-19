@@ -41,6 +41,7 @@ export function useZQueryProvider(zQuery: ZQuery | null) {
   }, [info]);
 }
 
+// @todo move certain things to onFrame instead of onTick
 function createStepTimer(physicsStepDuration: number, onTick: () => void) {
   let lastTime = performance.now(),
     physicsStepAccumulator = 0;
@@ -318,6 +319,7 @@ export const FPSBody: React.FC<{
 };
 
 const tmpVector = new THREE.Vector3();
+const tmpb2 = new b2.Vec2();
 
 export const Body: React.FC<{
   isStatic?: boolean;
@@ -333,7 +335,7 @@ export const Body: React.FC<{
 
   // initialize the physics object
   const init = (meshObject: THREE.Object3D) => {
-    const { world, bodyListeners } = info;
+    const { world, bodyListeners, bodyUpdaters } = info;
 
     const meshGeom =
       meshObject instanceof THREE.Mesh ? meshObject.geometry : null;
@@ -395,10 +397,26 @@ export const Body: React.FC<{
       body.CreateFixture(fixDef);
     });
 
+    const bodyPos = body.GetPosition(); // stable reference to vector itself
+    const updater = isKinematic
+      ? () => {
+          // use linear velocity to animate to intended spot
+          // @todo investigate a more direct position setter?
+          tmpVector.set(0, 0, 0).applyMatrix4(meshObject.matrixWorld);
+          tmpb2.Copy(bodyPos);
+          tmpb2.SelfSubXY(tmpVector.x, tmpVector.y);
+          tmpb2.SelfMul(-1 / STEP); // make velocity high enough to reach destination in next step
+          body.SetLinearVelocity(tmpb2);
+        }
+      : null;
+    if (updater) {
+      bodyUpdaters.push(updater);
+    }
+
     const tuple: ListenerTuple | null =
       isStatic || isKinematic
         ? null
-        : [body, body.GetPosition(), meshObject, zOffset, parentInverse];
+        : [body, bodyPos, meshObject, zOffset, parentInverse];
     if (tuple) {
       bodyListeners.push(tuple);
     }
@@ -406,6 +424,15 @@ export const Body: React.FC<{
     // clean up
     return () => {
       world.DestroyBody(body);
+
+      if (updater) {
+        const updaterIndex = bodyUpdaters.indexOf(updater);
+        if (updaterIndex === -1) {
+          console.error('updater disappeared?');
+        } else {
+          bodyUpdaters.splice(updaterIndex, 1);
+        }
+      }
 
       if (tuple) {
         const tupleIndex = bodyListeners.indexOf(tuple);
