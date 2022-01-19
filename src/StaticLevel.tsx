@@ -3,6 +3,7 @@ import * as b2 from '@flyover/box2d';
 import { useLoader } from '@react-three/fiber';
 import { MeshReflectorMaterial } from '@react-three/drei';
 import { AutoUV2Ignore } from '@react-three/lightmap';
+import { useSpring, animated } from '@react-spring/three';
 import * as THREE from 'three';
 
 import { CSGRoot, CSGOp, CSGContent } from './csg';
@@ -60,6 +61,12 @@ export const StaticLevel: React.FC = () => {
   panelTexture.wrapS = THREE.RepeatWrapping;
   panelTexture.wrapT = THREE.RepeatWrapping;
   // panelTexture.magFilter = THREE.NearestFilter;
+
+  const [{ leftDoorPos, rightDoorPos }, spring] = useSpring(() => ({
+    config: { tension: 300, friction: 35 },
+    leftDoorPos: [-0.5, 0, 1],
+    rightDoorPos: [0.5, 0, 1]
+  }));
 
   return (
     <>
@@ -128,29 +135,35 @@ export const StaticLevel: React.FC = () => {
           </mesh>
 
           <AutoUV2Ignore>
-            <mesh position={[-0.5, -2.15, 1]} castShadow>
-              <boxBufferGeometry args={[1, 0.2, 2]} />
-              <meshStandardMaterial color="#808080" />
-              <Body isKinematic />
-            </mesh>
+            <group position={[0, -2.15, 0]}>
+              <animated.mesh position={leftDoorPos as any} castShadow>
+                <boxBufferGeometry args={[1, 0.2, 2]} />
+                <meshStandardMaterial color="#808080" />
+                <Body isKinematic />
+              </animated.mesh>
 
-            <mesh position={[0.5, -2.15, 1]} castShadow>
-              <boxBufferGeometry args={[1, 0.2, 2]} />
-              <meshStandardMaterial color="#808080" />
-              <Body isKinematic />
-            </mesh>
-
-            <Sensor
-              initShape={() => {
-                const shape = new b2.PolygonShape();
-                shape.SetAsBox(2.5, 1.5, new b2.Vec2(0, -2.15));
-                return shape;
-              }}
-              onChange={isColliding => {
-                console.log('contact?', isColliding);
-              }}
-            />
+              <animated.mesh position={rightDoorPos as any} castShadow>
+                <boxBufferGeometry args={[1, 0.2, 2]} />
+                <meshStandardMaterial color="#808080" />
+                <Body isKinematic />
+              </animated.mesh>
+            </group>
           </AutoUV2Ignore>
+
+          <Sensor
+            initShape={() => {
+              const shape = new b2.PolygonShape();
+              shape.SetAsBox(2.5, 1.5, new b2.Vec2(0, -2.15));
+              return shape;
+            }}
+            onChange={isColliding => {
+              console.log('contact?', isColliding);
+              spring.start({
+                leftDoorPos: [isColliding ? -1.4 : -0.5, 0, 1],
+                rightDoorPos: [isColliding ? 1.4 : 0.5, 0, 1]
+              });
+            }}
+          />
 
           <pointLight
             position={[0, 0, 1.75]}

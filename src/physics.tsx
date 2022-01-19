@@ -395,9 +395,10 @@ export const Body: React.FC<{
       body.CreateFixture(fixDef);
     });
 
-    const tuple: ListenerTuple | null = isStatic
-      ? null
-      : [body, body.GetPosition(), meshObject, zOffset, parentInverse];
+    const tuple: ListenerTuple | null =
+      isStatic || isKinematic
+        ? null
+        : [body, body.GetPosition(), meshObject, zOffset, parentInverse];
     if (tuple) {
       bodyListeners.push(tuple);
     }
