@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useLayoutEffect } from 'react';
 import * as b2 from '@flyover/box2d';
 import { useLoader } from '@react-three/fiber';
-import { MeshReflectorMaterial } from '@react-three/drei';
+import { MeshReflectorMaterial, SpotLight } from '@react-three/drei';
 import { AutoUV2Ignore } from '@react-three/lightmap';
 import { useSpring, animated } from '@react-spring/three';
 import * as THREE from 'three';
@@ -79,6 +79,12 @@ export const StaticLevel: React.FC = () => {
     rightDoorPos: [0.5, 0, 1],
     open: false // stash the intended door state for onRest
   }));
+
+  const spotLightRef = useRef<THREE.SpotLight>();
+  const spotLightTargetRef = useRef<THREE.Object3D>();
+  useLayoutEffect(() => {
+    spotLightRef.current!.target = spotLightTargetRef.current!;
+  }, []);
 
   return (
     <>
@@ -159,6 +165,20 @@ export const StaticLevel: React.FC = () => {
                 <meshStandardMaterial color="#808080" />
                 <Body isKinematic />
               </animated.mesh>
+
+              <spotLight
+                position={[0, -0.3, 2]}
+                distance={4}
+                decay={2}
+                penumbra={0.8}
+                angle={1}
+                color="#c0ffff"
+                intensity={1.5}
+                castShadow
+                ref={spotLightRef}
+              />
+
+              <group position={[0, -0.5, 0]} ref={spotLightTargetRef} />
             </group>
           </AutoUV2Ignore>
 
