@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import * as b2 from '@flyover/box2d';
 import { useLoader } from '@react-three/fiber';
 import { MeshReflectorMaterial } from '@react-three/drei';
@@ -62,10 +62,22 @@ export const StaticLevel: React.FC = () => {
   panelTexture.wrapT = THREE.RepeatWrapping;
   // panelTexture.magFilter = THREE.NearestFilter;
 
+  const [elevatorLocked, setElevatorLocked] = useState(false);
+  const insideRef = useRef(false); // no need for useState here
+
   const [{ leftDoorPos, rightDoorPos }, spring] = useSpring(() => ({
     config: { tension: 300, friction: 35 },
+    onRest: props => {
+      if (!props.value.open) {
+        // when door has finished closing, check if we need to lock it
+        if (insideRef.current) {
+          setElevatorLocked(true);
+        }
+      }
+    },
     leftDoorPos: [-0.5, 0, 1],
-    rightDoorPos: [0.5, 0, 1]
+    rightDoorPos: [0.5, 0, 1],
+    open: false // stash the intended door state for onRest
   }));
 
   return (
@@ -153,15 +165,29 @@ export const StaticLevel: React.FC = () => {
           <Sensor
             initShape={() => {
               const shape = new b2.PolygonShape();
-              shape.SetAsBox(2.5, 1.5, new b2.Vec2(0, -2.15));
+              shape.SetAsBox(2.5, 1, new b2.Vec2(0, -2.15));
               return shape;
             }}
             onChange={isColliding => {
-              console.log('contact?', isColliding);
+              const doorOpen = isColliding && !elevatorLocked;
+
               spring.start({
-                leftDoorPos: [isColliding ? -1.4 : -0.5, 0, 1],
-                rightDoorPos: [isColliding ? 1.4 : 0.5, 0, 1]
+                leftDoorPos: [doorOpen ? -1.4 : -0.5, 0, 1],
+                rightDoorPos: [doorOpen ? 1.4 : 0.5, 0, 1],
+                open: doorOpen
               });
+            }}
+          />
+
+          <Sensor
+            initShape={() => {
+              const shape = new b2.PolygonShape();
+              shape.SetAsBox(2, 2, new b2.Vec2(0, 0));
+              return shape;
+            }}
+            onChange={isColliding => {
+              console.log('inside?', isColliding);
+              insideRef.current = isColliding;
             }}
           />
 
