@@ -10,7 +10,7 @@ import { g_debugDraw, g_camera } from './box2dDebugDraw';
 export type ZQuery = (x: number, y: number) => number | null;
 
 type Updater = () => void;
-type ListenerTuple = [b2.Body, b2.Vec2, THREE.Object3D, number];
+type ListenerTuple = [b2.Body, b2.Vec2, THREE.Object3D, number, THREE.Matrix4];
 interface PhysicsInfo {
   world: b2.World;
   bodyUpdaters: Updater[];
@@ -93,6 +93,7 @@ export const TopDownPhysics: React.FC = ({ children }) => {
     const { world, bodyUpdaters, bodyListeners } = activeContextValue;
 
     const upVector = new THREE.Vector3(0, 0, 1); // reusable helper
+    const tmpPosVector = new THREE.Vector3(); // reusable helper
 
     const canvas = document.createElement('canvas');
     document.body.appendChild(canvas);
@@ -146,18 +147,29 @@ export const TopDownPhysics: React.FC = ({ children }) => {
       // update rendered objects
       // @todo this outside of the fixed step loop - per-frame instead
       for (let i = 0; i < bodyListeners.length; i += 1) {
-        const [body, bodyPos, target, zOffset] = bodyListeners[i];
+        const [body, bodyPos, target, zOffset, parentInverse] = bodyListeners[
+          i
+        ];
 
         const zPos = zQuery(bodyPos.x, bodyPos.y);
 
-        target.position.x = bodyPos.x;
-        target.position.y = bodyPos.y;
+        // apply positioning within parent's frame of reference
+        tmpPosVector.x = bodyPos.x;
+        tmpPosVector.y = bodyPos.y;
+        if (zPos !== null) {
+          tmpPosVector.z = zPos + zOffset;
+        }
+
+        tmpPosVector.applyMatrix4(parentInverse);
+
+        target.position.x = tmpPosVector.x;
+        target.position.y = tmpPosVector.y;
         if (zPos !== null) {
           // apply basic smoothing for retro stair-step feel for large Z changes
-          const targetZ = zPos + zOffset;
-          const delta = targetZ - target.position.z;
+          const delta = tmpPosVector.z - target.position.z;
           target.position.z += Math.abs(delta) < 0.1 ? delta : delta * 0.25;
         }
+
         target.quaternion.setFromAxisAngle(upVector, body.GetAngle());
         target.matrixWorldNeedsUpdate = true;
       }
@@ -252,7 +264,13 @@ export const FPSBody: React.FC<{
     };
     bodyUpdaters.push(updater);
 
-    const tuple: ListenerTuple = [body, body.GetPosition(), fpsObject, zOffset];
+    const tuple: ListenerTuple = [
+      body,
+      body.GetPosition(),
+      fpsObject,
+      zOffset,
+      new THREE.Matrix4()
+    ];
     bodyListeners.push(tuple);
 
     // clean up
@@ -278,10 +296,13 @@ export const FPSBody: React.FC<{
   return <ThreeDummy init={init} />;
 };
 
+const tmpVector = new THREE.Vector3();
+
 export const Body: React.FC<{
   isStatic?: boolean;
+  isKinematic?: boolean;
   initShape?: () => b2.Shape | b2.Shape[];
-}> = ({ isStatic, initShape }) => {
+}> = ({ isStatic, isKinematic, initShape }) => {
   const initShapeRef = useRef(initShape); // storing value only once
 
   const info = useContext(PhysicsContext);
@@ -299,13 +320,25 @@ export const Body: React.FC<{
     const bodyDef = new b2.BodyDef();
     const fixDef = new b2.FixtureDef();
 
-    bodyDef.type = isStatic ? b2.staticBody : b2.dynamicBody;
-    bodyDef.position.x = meshObject.position.x;
-    bodyDef.position.y = meshObject.position.y;
+    meshObject.updateWorldMatrix(true, false); // @todo avoid if already updated?
+    tmpVector.copy(meshObject.position);
+    tmpVector.applyMatrix4(meshObject.parent!.matrixWorld); // also apply the parent's transform before inverting
+
+    const parentInverse = new THREE.Matrix4();
+    parentInverse.copy(meshObject.parent!.matrixWorld);
+    parentInverse.invert();
+
+    bodyDef.type = isStatic
+      ? b2.staticBody
+      : isKinematic
+      ? b2.kinematicBody
+      : b2.dynamicBody;
+    bodyDef.position.x = tmpVector.x;
+    bodyDef.position.y = tmpVector.y;
     bodyDef.linearDamping = 5;
     bodyDef.angularDamping = 5;
 
-    const zOffset = meshObject.position.z; // for later
+    const zOffset = tmpVector.z; // for later
 
     fixDef.density = 300.0;
     fixDef.friction = 0.8;
@@ -343,7 +376,7 @@ export const Body: React.FC<{
 
     const tuple: ListenerTuple | null = isStatic
       ? null
-      : [body, body.GetPosition(), meshObject, zOffset];
+      : [body, body.GetPosition(), meshObject, zOffset, parentInverse];
     if (tuple) {
       bodyListeners.push(tuple);
     }

@@ -1,10 +1,12 @@
 import React from 'react';
 import { useLoader } from '@react-three/fiber';
 import { MeshReflectorMaterial } from '@react-three/drei';
+import { AutoUV2Ignore } from '@react-three/lightmap';
 import * as THREE from 'three';
 
 import { CSGRoot, CSGOp, CSGContent } from './csg';
 import { LevelMesh, WorldUV } from './levelMesh';
+import { Body } from './physics';
 
 // texture from https://opengameart.org/content/metalstone-textures by Spiney
 import concreteTextureUrl from './ft_conc01_c.png';
@@ -70,16 +72,8 @@ export const StaticLevel: React.FC = () => {
               emissiveIntensity={0.4}
             />
           ),
-          elevator: (
-            <meshStandardMaterial
-              color="#a0a0a0"
-              map={panelTexture}
-              roughness={0.5}
-            />
-          ),
-          elevatorCeiling: (
-            <meshStandardMaterial color="#404040" roughness={0.5} />
-          )
+          elevator: <meshStandardMaterial color="#a0a0a0" map={panelTexture} />,
+          elevatorCeiling: <meshStandardMaterial color="#404040" />
         }}
       >
         {/*<group matrix={rampMatrix} matrixAutoUpdate={false}>
@@ -131,6 +125,29 @@ export const StaticLevel: React.FC = () => {
               roughness={1}
             />
           </mesh>
+
+          <AutoUV2Ignore>
+            <mesh position={[-0.5, -2.15, 1]} castShadow>
+              <boxBufferGeometry args={[1, 0.2, 2]} />
+              <meshStandardMaterial color="#808080" />
+              <Body isKinematic />
+            </mesh>
+
+            <mesh position={[0.5, -2.15, 1]} castShadow>
+              <boxBufferGeometry args={[1, 0.2, 2]} />
+              <meshStandardMaterial color="#808080" />
+              <Body isKinematic />
+            </mesh>
+          </AutoUV2Ignore>
+
+          <pointLight
+            position={[0, 0, 1.75]}
+            distance={8}
+            decay={2}
+            color="#f0ffff"
+            castShadow
+            intensity={0.75}
+          />
         </group>
       </LevelMesh>
 
