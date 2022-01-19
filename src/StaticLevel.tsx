@@ -9,6 +9,9 @@ import { LevelMesh, WorldUV } from './levelMesh';
 // texture from https://opengameart.org/content/metalstone-textures by Spiney
 import concreteTextureUrl from './ft_conc01_c.png';
 
+// texture from https://opengameart.org/content/50-2k-metal-textures by rubberduck
+import panelTextureUrl from './panels.png';
+
 export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
   return (
     <group>
@@ -49,7 +52,11 @@ export const StaticLevel: React.FC = () => {
   const concreteTexture = useLoader(THREE.TextureLoader, concreteTextureUrl);
   concreteTexture.wrapS = THREE.RepeatWrapping;
   concreteTexture.wrapT = THREE.RepeatWrapping;
-  // concreteTexture.magFilter = THREE.NearestFilter;
+
+  const panelTexture = useLoader(THREE.TextureLoader, panelTextureUrl);
+  panelTexture.wrapS = THREE.RepeatWrapping;
+  panelTexture.wrapT = THREE.RepeatWrapping;
+  // panelTexture.magFilter = THREE.NearestFilter;
 
   return (
     <>
@@ -62,6 +69,16 @@ export const StaticLevel: React.FC = () => {
               emissive={new THREE.Color('#f0f8ff')}
               emissiveIntensity={0.4}
             />
+          ),
+          elevator: (
+            <meshStandardMaterial
+              color="#a0a0a0"
+              map={panelTexture}
+              roughness={0.5}
+            />
+          ),
+          elevatorCeiling: (
+            <meshStandardMaterial color="#404040" roughness={0.5} />
           )
         }}
       >
@@ -78,42 +95,42 @@ export const StaticLevel: React.FC = () => {
           <Corridor />
         </group>
         <group position={[1, 2, 0]}>
-          <CSGOp type="subtract">
-            <CSGContent
-              material={[
-                'default',
-                'default',
-                'default',
-                'default',
-                'default',
-                'floorLight'
-              ]}
-            >
-              <mesh position={[0, 0, 1]}>
-                <boxBufferGeometry args={[4, 4, 2]} />
-                <WorldUV />
-              </mesh>
-            </CSGContent>
-            <CSGContent>
-              <mesh position={[0, 0, -0.099]}>
-                <boxBufferGeometry args={[3.8, 3.8, 0.2]} />
-                <WorldUV />
-              </mesh>
-            </CSGContent>
-          </CSGOp>
+          <CSGContent
+            material={[
+              'elevator',
+              'elevator',
+              'elevator',
+              'elevator',
+              'elevatorCeiling',
+              'floorLight'
+            ]}
+          >
+            <mesh position={[0, 0, 1]}>
+              <boxBufferGeometry args={[4, 4, 2]} />
+              <WorldUV scale={0.25} />
+            </mesh>
+          </CSGContent>
 
-          {/*<mesh
-            position={[0, 0, 1.95]}
-            rotation={new THREE.Euler(Math.PI, 0, 0)}
+          <mesh
+            position={[0, 0, 0.002]}
+            // rotation={new THREE.Euler(Math.PI, 0, 0)}
             receiveShadow
           >
-            <planeGeometry args={[1, 1]} />
-            <meshStandardMaterial
-              color="#202020"
-              emissive={new THREE.Color('#f0f8ff')}
-              emissiveIntensity={1}
+            <planeGeometry args={[3.8, 3.8]} />
+            <MeshReflectorMaterial
+              color="#c0c0c0"
+              blur={[400, 400]}
+              mirror={0.1}
+              resolution={512}
+              mixBlur={1}
+              mixStrength={0.85}
+              depthScale={0.5}
+              minDepthThreshold={0.1}
+              maxDepthThreshold={1.5}
+              metalness={0}
+              roughness={1}
             />
-          </mesh>*/}
+          </mesh>
         </group>
       </LevelMesh>
 

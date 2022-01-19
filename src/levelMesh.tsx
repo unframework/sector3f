@@ -130,7 +130,7 @@ function createFloorFromVolume(
   return [<Floor />, queryWorld];
 }
 
-export const WorldUV: React.FC = ({ children }) => {
+export const WorldUV: React.FC<{ scale?: number }> = ({ scale, children }) => {
   return (
     <ThreeDummy
       init={obj => {
@@ -140,7 +140,7 @@ export const WorldUV: React.FC = ({ children }) => {
             // @todo check if needs update?
             obj.updateWorldMatrix(true, false);
 
-            applyUVProjection(geom, obj.matrixWorld);
+            applyUVProjection(geom, obj.matrixWorld, scale || 0.125);
           }
         }
       }}

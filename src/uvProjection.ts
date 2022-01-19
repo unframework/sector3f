@@ -55,7 +55,8 @@ const tmpVN = new THREE.Vector3();
 const tmpUV = new THREE.Vector3();
 export function applyUVProjection(
   geometry: THREE.BufferGeometry,
-  xform: THREE.Matrix4
+  xform: THREE.Matrix4,
+  scale: number
 ) {
   tmpNormalMat.getNormalMatrix(xform);
 
@@ -81,7 +82,7 @@ export function applyUVProjection(
     tmpUV.fromArray(positionAttr.array, i * 3);
     tmpUV.applyMatrix4(xform);
 
-    tmpUV.multiplyScalar(0.125);
+    tmpUV.multiplyScalar(scale);
     tmpUV.applyMatrix4(uvMatrix);
     uvAttr.setXY(i, tmpUV.x, tmpUV.y);
   }
