@@ -146,6 +146,9 @@ export const StaticLevel: React.FC = () => {
                 shape.SetAsBox(2.5, 1.5, new b2.Vec2(0, -2.15));
                 return shape;
               }}
+              onChange={isColliding => {
+                console.log('contact?', isColliding);
+              }}
             />
           </AutoUV2Ignore>
 

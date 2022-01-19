@@ -14,10 +14,13 @@ type ListenerTuple = [b2.Body, b2.Vec2, THREE.Object3D, number, THREE.Matrix4];
 interface PhysicsInfo {
   world: b2.World;
   bodyUpdaters: Updater[];
+  bodyPostUpdaters: Updater[];
   bodyListeners: ListenerTuple[];
   zQuery: ZQuery | null;
 }
 const PhysicsContext = React.createContext<PhysicsInfo | null>(null);
+
+const FPS_CATEGORY_BIT = 1 << 1; // FPS body collision mask bit
 
 export function useZQueryProvider(zQuery: ZQuery | null) {
   const info = useContext(PhysicsContext);
@@ -84,13 +87,25 @@ export const TopDownPhysics: React.FC = ({ children }) => {
   const [activeContextValue] = useState<PhysicsInfo>(() => {
     const world = new b2.World(new b2.Vec2(0, 0));
     const bodyUpdaters: Updater[] = [];
+    const bodyPostUpdaters: Updater[] = [];
     const bodyListeners: ListenerTuple[] = [];
 
-    return { world, bodyListeners, bodyUpdaters, zQuery: null };
+    return {
+      world,
+      bodyListeners,
+      bodyUpdaters,
+      bodyPostUpdaters,
+      zQuery: null
+    };
   });
 
   useEffect(() => {
-    const { world, bodyUpdaters, bodyListeners } = activeContextValue;
+    const {
+      world,
+      bodyUpdaters,
+      bodyPostUpdaters,
+      bodyListeners
+    } = activeContextValue;
 
     const upVector = new THREE.Vector3(0, 0, 1); // reusable helper
     const tmpPosVector = new THREE.Vector3(); // reusable helper
@@ -143,6 +158,11 @@ export const TopDownPhysics: React.FC = ({ children }) => {
 
       // get latest Z-query for this frame
       const zQuery = activeContextValue.zQuery || DUMMY_Z_QUERY;
+
+      // update bodies after solve
+      for (let i = 0; i < bodyPostUpdaters.length; i += 1) {
+        bodyPostUpdaters[i]();
+      }
 
       // update rendered objects
       // @todo this outside of the fixed step loop - per-frame instead
@@ -238,6 +258,7 @@ export const FPSBody: React.FC<{
     fixDef.density = 200.0; // this arrives at about 40kg mass
     fixDef.friction = 0.1;
     fixDef.restitution = 0.0;
+    fixDef.filter.categoryBits |= FPS_CATEGORY_BIT; // add on the extra bit to default
     body.CreateFixture(fixDef);
 
     const mass = body.GetMass();
@@ -401,17 +422,25 @@ export const Body: React.FC<{
 
 export const Sensor: React.FC<{
   initShape: () => b2.Shape | b2.Shape[];
-}> = ({ initShape }) => {
+  onChange: (isColliding: boolean) => void;
+}> = ({ initShape, onChange }) => {
   const initShapeRef = useRef(initShape); // storing value only once
+
+  // keep latest reference
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   const info = useContext(PhysicsContext);
   if (!info) {
     throw new Error('expecting b2.World');
   }
 
+  // for per-frame state debounce
+  const lastActiveRef = useRef(false);
+
   // initialize the physics object
   const init = (referenceObject: THREE.Object3D) => {
-    const { world, bodyListeners } = info;
+    const { world, bodyListeners, bodyPostUpdaters } = info;
 
     const bodyDef = new b2.BodyDef();
     const fixDef = new b2.FixtureDef();
@@ -427,6 +456,8 @@ export const Sensor: React.FC<{
     fixDef.friction = 0.8;
     fixDef.restitution = 0.0;
     fixDef.isSensor = true;
+    fixDef.filter.categoryBits = FPS_CATEGORY_BIT; // only this category
+    fixDef.filter.maskBits = FPS_CATEGORY_BIT;
 
     // get set of shapes for this body
     const shapes: b2.Shape[] = [];
@@ -441,12 +472,41 @@ export const Sensor: React.FC<{
     const body = world.CreateBody(bodyDef);
     shapes.forEach(shape => {
       fixDef.shape = shape;
-      body.CreateFixture(fixDef);
+      const fix = body.CreateFixture(fixDef);
     });
+
+    // per-frame control
+    const updater = () => {
+      let hasContact = false;
+      for (
+        let contact = body.GetContactList();
+        contact;
+        contact = contact!.next
+      ) {
+        // const bodyA = contact.contact.GetFixtureA().GetBody();
+        // const otherBody = bodyA === body ? contact.contact.GetFixtureB().GetBody() : bodyA;
+        hasContact = true;
+        break;
+      }
+
+      // debounce state and notify
+      if (lastActiveRef.current !== hasContact) {
+        lastActiveRef.current = hasContact;
+        onChangeRef.current(hasContact);
+      }
+    };
+    bodyPostUpdaters.push(updater);
 
     // clean up
     return () => {
       world.DestroyBody(body);
+
+      const updaterIndex = bodyPostUpdaters.indexOf(updater);
+      if (updaterIndex === -1) {
+        console.error('post-updater disappeared?');
+      } else {
+        bodyPostUpdaters.splice(updaterIndex, 1);
+      }
     };
   };
 
