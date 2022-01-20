@@ -95,7 +95,6 @@ export const StaticLevel: React.FC = () => {
             <meshStandardMaterial
               color="#f0f8ff"
               emissive={new THREE.Color('#f0f8ff')}
-              emissiveIntensity={0.4}
             />
           ),
           elevator: <meshStandardMaterial color="#a0a0a0" map={panelTexture} />,
@@ -156,20 +155,20 @@ export const StaticLevel: React.FC = () => {
             <group position={[0, -2.15, 0]}>
               <animated.mesh position={leftDoorPos as any} castShadow>
                 <boxBufferGeometry args={[1, 0.2, 2]} />
-                <meshStandardMaterial color="#a8b0b0" map={panelTexture} />
+                <meshStandardMaterial color="#b0b4b4" map={panelTexture} />
                 <Body isKinematic />
                 <WorldUV scale={0.25} />
               </animated.mesh>
 
               <animated.mesh position={rightDoorPos as any} castShadow>
                 <boxBufferGeometry args={[1, 0.2, 2]} />
-                <meshStandardMaterial color="#a8b0b0" map={panelTexture} />
+                <meshStandardMaterial color="#b0b4b4" map={panelTexture} />
                 <Body isKinematic />
                 <WorldUV scale={0.25} />
               </animated.mesh>
 
               <spotLight
-                position={[0, -0.3, 2]}
+                position={[0, -0.5, 2]}
                 distance={4}
                 decay={2}
                 penumbra={0.8}
@@ -180,7 +179,7 @@ export const StaticLevel: React.FC = () => {
                 ref={spotLightRef}
               />
 
-              <group position={[0, -0.5, 0]} ref={spotLightTargetRef} />
+              <group position={[0, -0.6, 0]} ref={spotLightTargetRef} />
             </group>
           </AutoUV2Ignore>
 

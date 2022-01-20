@@ -23,7 +23,7 @@ export const MainStage: React.FC = () => {
   return (
     <TopDownPhysics>
       <group>
-        <group position={[1, -3, 1.25]}>
+        <group position={[1, -9, 1.25]}>
           <PerspectiveCamera
             near={0.075}
             far={100}

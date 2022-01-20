@@ -162,10 +162,9 @@ export const LevelMesh: React.FC<{ materials: CSGRootProps['materials'] }> = ({
     <Lightmap
       disabled={!lightmapActive}
       texelsPerUnit={1}
-      bounceMultiplier={20}
       samplerSettings={{ targetSize: 32 }}
     >
-      <DebugOverlayWidgets />
+      {/*<DebugOverlayWidgets />*/}
 
       <CSGRoot
         materials={materials}
