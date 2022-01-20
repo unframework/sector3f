@@ -191,6 +191,7 @@ export const TopDownPhysics: React.FC = ({ children }) => {
           target.position.z += Math.abs(delta) < 0.1 ? delta : delta * 0.25;
         }
 
+        // @todo also respect parent's transform for this? or just disallow xform for dynamic bodies?
         target.quaternion.setFromAxisAngle(upVector, body.GetAngle());
         target.matrixWorldNeedsUpdate = true;
       }
@@ -343,6 +344,7 @@ export const Body: React.FC<{
     const bodyDef = new b2.BodyDef();
     const fixDef = new b2.FixtureDef();
 
+    // @todo also deal with body rotation
     meshObject.updateWorldMatrix(true, false); // @todo avoid if already updated?
     tmpVector.copy(meshObject.position);
     tmpVector.applyMatrix4(meshObject.parent!.matrixWorld); // also apply the parent's transform before inverting
@@ -473,6 +475,7 @@ export const Sensor: React.FC<{
     const bodyDef = new b2.BodyDef();
     const fixDef = new b2.FixtureDef();
 
+    // @todo also deal with body rotation
     referenceObject.updateWorldMatrix(true, false); // @todo avoid if already updated?
     tmpVector.set(0, 0, 0).applyMatrix4(referenceObject.matrixWorld);
 

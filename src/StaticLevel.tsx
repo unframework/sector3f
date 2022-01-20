@@ -66,6 +66,8 @@ export const StaticLevel: React.FC = () => {
     spotLightRef.current!.target = spotLightTargetRef.current!;
   }, []);
 
+  const [elevatorLocked, setElevatorLocked] = useState(false);
+
   return (
     <>
       <LevelMesh
@@ -94,24 +96,32 @@ export const StaticLevel: React.FC = () => {
         <group position={[1, -5, 0]}>
           <Corridor />
         </group>
+
         <group position={[1, 2, 0]}>
-          <Elevator />
+          <Elevator
+            isLocked={elevatorLocked}
+            onInside={() => {
+              setElevatorLocked(true);
+            }}
+          />
 
-          <group position={[0, -1.9, 0]}>
-            <spotLight
-              position={[0, -0.5, 2]}
-              distance={4}
-              decay={2}
-              penumbra={0.8}
-              angle={1}
-              color="#c0ffff"
-              intensity={1.5}
-              castShadow
-              ref={spotLightRef}
-            />
+          <spotLight
+            position={[0, -2.4, 2]}
+            distance={4}
+            decay={2}
+            penumbra={0.8}
+            angle={1}
+            color="#c0ffff"
+            intensity={1.5}
+            castShadow
+            ref={spotLightRef}
+          />
 
-            <group position={[0, -0.6, 0]} ref={spotLightTargetRef} />
-          </group>
+          <group position={[0, -2.5, 0]} ref={spotLightTargetRef} />
+        </group>
+
+        <group position={[1, -12, 0]} rotation={[0, 0, Math.PI]}>
+          <Elevator isLocked={false} onInside={() => {}} />
         </group>
       </LevelMesh>
 

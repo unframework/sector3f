@@ -13,14 +13,20 @@ import { Body, Sensor } from '../physics';
 // texture from https://opengameart.org/content/50-2k-metal-textures by rubberduck
 import panelTextureUrl from './panels.png';
 
-export const Elevator: React.FC = () => {
+export const Elevator: React.FC<{
+  isLocked: boolean;
+  onInside: () => void;
+}> = ({ isLocked, onInside }) => {
   // @todo dedupe
   const panelTexture = useLoader(THREE.TextureLoader, panelTextureUrl);
   panelTexture.wrapS = THREE.RepeatWrapping;
   panelTexture.wrapT = THREE.RepeatWrapping;
 
-  const [elevatorLocked, setElevatorLocked] = useState(false);
   const insideRef = useRef(false); // no need for useState here
+
+  // track latest callback instance
+  const onInsideRef = useRef(onInside);
+  onInsideRef.current = onInside;
 
   const [{ leftDoorPos, rightDoorPos }, spring] = useSpring(() => ({
     config: { tension: 300, friction: 35 },
@@ -28,7 +34,7 @@ export const Elevator: React.FC = () => {
       if (!props.value.open) {
         // when door has finished closing, check if we need to lock it
         if (insideRef.current) {
-          setElevatorLocked(true);
+          onInsideRef.current();
         }
       }
     },
@@ -103,25 +109,41 @@ export const Elevator: React.FC = () => {
             <Body isKinematic />
             <WorldUV scale={0.25} />
           </animated.mesh>
+
+          <Sensor
+            initShape={() => {
+              const shape = new b2.PolygonShape();
+              shape.SetAsBox(2.5, 1);
+              return shape;
+            }}
+            onChange={isColliding => {
+              const doorOpen = isColliding && !isLocked;
+
+              spring.start({
+                leftDoorPos: [doorOpen ? -1.4 : -0.5, 0, 0.9],
+                rightDoorPos: [doorOpen ? 1.4 : 0.5, 0, 0.9],
+                open: doorOpen
+              });
+            }}
+          />
+        </group>
+
+        <group position={[0, 1.9, 0]}>
+          <mesh position={[-0.5, 0, 0.9]} castShadow>
+            <boxBufferGeometry args={[1, 0.15, 1.8]} />
+            <meshStandardMaterial color="#b0b4b4" map={panelTexture} />
+            <Body isStatic />
+            <WorldUV scale={0.25} />
+          </mesh>
+
+          <mesh position={[0.5, 0, 0.9]} castShadow>
+            <boxBufferGeometry args={[1, 0.15, 1.8]} />
+            <meshStandardMaterial color="#b0b4b4" map={panelTexture} />
+            <Body isStatic />
+            <WorldUV scale={0.25} />
+          </mesh>
         </group>
       </AutoUV2Ignore>
-
-      <Sensor
-        initShape={() => {
-          const shape = new b2.PolygonShape();
-          shape.SetAsBox(2.5, 1, new b2.Vec2(0, -2.15));
-          return shape;
-        }}
-        onChange={isColliding => {
-          const doorOpen = isColliding && !elevatorLocked;
-
-          spring.start({
-            leftDoorPos: [doorOpen ? -1.4 : -0.5, 0, 0.9],
-            rightDoorPos: [doorOpen ? 1.4 : 0.5, 0, 0.9],
-            open: doorOpen
-          });
-        }}
-      />
 
       <Sensor
         initShape={() => {
