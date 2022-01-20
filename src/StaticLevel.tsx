@@ -75,8 +75,8 @@ export const StaticLevel: React.FC = () => {
         }
       }
     },
-    leftDoorPos: [-0.5, 0, 1],
-    rightDoorPos: [0.5, 0, 1],
+    leftDoorPos: [-0.5, 0, 0.9],
+    rightDoorPos: [0.5, 0, 0.9],
     open: false // stash the intended door state for onRest
   }));
 
@@ -98,7 +98,8 @@ export const StaticLevel: React.FC = () => {
             />
           ),
           elevator: <meshStandardMaterial color="#a0a0a0" map={panelTexture} />,
-          elevatorCeiling: <meshStandardMaterial color="#404040" />
+          elevatorCeiling: <meshStandardMaterial color="#404040" />,
+          elevatorTrim: <meshStandardMaterial color="#202020" />
         }}
       >
         {/*<group matrix={rampMatrix} matrixAutoUpdate={false}>
@@ -125,7 +126,19 @@ export const StaticLevel: React.FC = () => {
             ]}
           >
             <mesh position={[0, 0, 1]}>
-              <boxBufferGeometry args={[4, 4, 2]} />
+              <boxBufferGeometry args={[3.6, 3.6, 2]} />
+              <WorldUV scale={0.25} />
+            </mesh>
+          </CSGContent>
+          <CSGContent material="elevatorTrim">
+            <mesh position={[0, -1.9, 0.9]}>
+              <boxBufferGeometry args={[2, 0.2, 1.8]} />
+              <WorldUV scale={0.25} />
+            </mesh>
+          </CSGContent>
+          <CSGContent material="elevatorTrim">
+            <mesh position={[0, 1.9, 0.9]}>
+              <boxBufferGeometry args={[2, 0.2, 1.8]} />
               <WorldUV scale={0.25} />
             </mesh>
           </CSGContent>
@@ -135,7 +148,7 @@ export const StaticLevel: React.FC = () => {
             // rotation={new THREE.Euler(Math.PI, 0, 0)}
             receiveShadow
           >
-            <planeGeometry args={[3.8, 3.8]} />
+            <planeGeometry args={[3.4, 3.4]} />
             <MeshReflectorMaterial
               color="#c0c0c0"
               blur={[400, 400]}
@@ -152,16 +165,16 @@ export const StaticLevel: React.FC = () => {
           </mesh>
 
           <AutoUV2Ignore>
-            <group position={[0, -2.15, 0]}>
+            <group position={[0, -1.9, 0]}>
               <animated.mesh position={leftDoorPos as any} castShadow>
-                <boxBufferGeometry args={[1, 0.2, 2]} />
+                <boxBufferGeometry args={[1, 0.15, 1.8]} />
                 <meshStandardMaterial color="#b0b4b4" map={panelTexture} />
                 <Body isKinematic />
                 <WorldUV scale={0.25} />
               </animated.mesh>
 
               <animated.mesh position={rightDoorPos as any} castShadow>
-                <boxBufferGeometry args={[1, 0.2, 2]} />
+                <boxBufferGeometry args={[1, 0.15, 1.8]} />
                 <meshStandardMaterial color="#b0b4b4" map={panelTexture} />
                 <Body isKinematic />
                 <WorldUV scale={0.25} />
@@ -193,8 +206,8 @@ export const StaticLevel: React.FC = () => {
               const doorOpen = isColliding && !elevatorLocked;
 
               spring.start({
-                leftDoorPos: [doorOpen ? -1.4 : -0.5, 0, 1],
-                rightDoorPos: [doorOpen ? 1.4 : 0.5, 0, 1],
+                leftDoorPos: [doorOpen ? -1.4 : -0.5, 0, 0.9],
+                rightDoorPos: [doorOpen ? 1.4 : 0.5, 0, 0.9],
                 open: doorOpen
               });
             }}

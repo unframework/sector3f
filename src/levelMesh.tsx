@@ -169,7 +169,7 @@ export const LevelMesh: React.FC<{ materials: CSGRootProps['materials'] }> = ({
       <CSGRoot
         materials={materials}
         onReady={(csg, materialMap) => {
-          const matIndexes = ['default', 'floorLight'].map(
+          const matIndexes = ['default', 'elevatorTrim', 'floorLight'].map(
             item => materialMap[item]
           );
           const polys = csg
