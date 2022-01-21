@@ -7,32 +7,49 @@ import { useWASD, useCameraLook } from './wasd';
 import { TopDownPhysics, Body, FPSBody } from './physics';
 import { StaticLevel } from './StaticLevel';
 
-export const MainStage: React.FC = () => {
-  const cameraRef = useRef<THREE.Camera | null>(null);
-  const cameraLook = useCameraLook(({ yaw, pitch }) => {
-    if (!cameraRef.current) {
+const FPSCamera: React.FC<{
+  look: { pitch: number; yaw: number };
+}> = ({ look, children }) => {
+  const cameraBaseRef = useRef<THREE.Object3D | null>(null);
+
+  useFrame(({ camera }) => {
+    if (!camera || !(camera instanceof THREE.PerspectiveCamera)) {
       return;
     }
 
-    cameraRef.current.quaternion.setFromEuler(
-      new THREE.Euler(pitch, 0, yaw, 'ZXY')
-    );
-  });
+    if (!cameraBaseRef.current) {
+      return;
+    }
+
+    camera.near = 0.075;
+    camera.far = 100;
+    camera.fov = 80;
+
+    cameraBaseRef.current.updateWorldMatrix(true, false);
+    const { yaw, pitch } = look;
+    camera.quaternion.setFromEuler(new THREE.Euler(pitch, 0, yaw, 'ZXY'));
+    camera.position
+      .set(0, 0, 0)
+      .applyMatrix4(cameraBaseRef.current.matrixWorld);
+  }, 0);
+
+  return (
+    <group position={[1, -8, 1.25]} ref={cameraBaseRef}>
+      {children}
+    </group>
+  );
+};
+
+export const MainStage: React.FC = () => {
+  const cameraLook = useCameraLook();
   const wasdMovement = useWASD();
 
   return (
     <TopDownPhysics>
       <group>
-        <group position={[1, -8, 1.25]}>
-          <PerspectiveCamera
-            near={0.075}
-            far={100}
-            fov={80}
-            makeDefault
-            ref={cameraRef}
-          />
+        <FPSCamera look={cameraLook}>
           <FPSBody radius={0.3} movement={wasdMovement} look={cameraLook} />
-        </group>
+        </FPSCamera>
 
         <React.Suspense
           fallback={
@@ -48,17 +65,6 @@ export const MainStage: React.FC = () => {
         >
           <StaticLevel />
         </React.Suspense>
-
-        {/*<mesh position={[3.5, 13, 0.4]} castShadow receiveShadow>
-          <boxGeometry args={[0.8, 0.8, 0.8]} />
-          <meshStandardMaterial color="#ff00ff" roughness={0.9} />
-          <Body />
-        </mesh>*/}
-        {/*<mesh position={[1, 2, 0.5]} castShadow receiveShadow>
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial color="#80c880" roughness={0.9} />
-          <Body />
-        </mesh>*/}
       </group>
     </TopDownPhysics>
   );

@@ -66,13 +66,7 @@ interface CameraLookState {
 }
 
 // exposes an object that gets updated imperatively, meant for polling
-export function useCameraLook(
-  onUpdate: (state: CameraLookState) => void
-): CameraLookState {
-  // referenced inside event handlers
-  const onUpdateRef = useRef(onUpdate);
-  onUpdateRef.current = onUpdate;
-
+export function useCameraLook(): CameraLookState {
   // not actually using state changes
   const [state] = useState(() => ({
     isLocked: false,
@@ -106,28 +100,15 @@ export function useCameraLook(
         0,
         Math.min(Math.PI, state.pitch - movementY * 0.004)
       );
-
-      if (onUpdateRef.current) {
-        onUpdateRef.current(state);
-      }
     };
 
     const pointerLockHandler = () => {
       state.isLocked = document.pointerLockElement === document.body;
-
-      if (onUpdateRef.current) {
-        onUpdateRef.current(state);
-      }
     };
 
     // hook up events
     document.body.addEventListener('mousemove', moveHandler);
     document.body.addEventListener('pointerlockchange', pointerLockHandler);
-
-    // fire the initial update
-    if (onUpdateRef.current) {
-      onUpdateRef.current(state);
-    }
 
     return () => {
       // clean up events
