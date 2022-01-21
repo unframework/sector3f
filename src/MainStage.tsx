@@ -78,7 +78,7 @@ export const MainStage: React.FC = () => {
     <group>
       <TopDownPhysics>
         {activeTeleport ? null : (
-          <FPSCamera position={[1, -8, 1.25]} look={cameraLook}>
+          <FPSCamera position={[1, -12, 1.25]} look={cameraLook}>
             <FPSBody
               radius={0.3}
               movement={wasdMovement}

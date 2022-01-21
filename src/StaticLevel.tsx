@@ -101,6 +101,7 @@ export const StaticLevel: React.FC<{
 
         <group position={[1, 2, 0]}>
           <Elevator
+            waitingSignal
             isLocked={elevatorLocked}
             onInside={() => {
               setElevatorLocked(true);

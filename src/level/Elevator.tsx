@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useLayoutEffect } from 'react';
 import * as b2 from '@flyover/box2d';
 import { useLoader } from '@react-three/fiber';
 import { MeshReflectorMaterial } from '@react-three/drei';
@@ -14,9 +14,10 @@ import { Body, Sensor } from '../physics';
 import panelTextureUrl from './panels.png';
 
 export const Elevator: React.FC<{
+  waitingSignal?: boolean;
   isLocked: boolean;
   onInside: () => void;
-}> = ({ isLocked, onInside }) => {
+}> = ({ waitingSignal, isLocked, onInside }) => {
   // @todo dedupe
   const panelTexture = useLoader(THREE.TextureLoader, panelTextureUrl);
   panelTexture.wrapS = THREE.RepeatWrapping;
@@ -42,6 +43,26 @@ export const Elevator: React.FC<{
     rightDoorPos: [0.5, 0, 0.9],
     open: false // stash the intended door state for onRest
   }));
+
+  // set up after-init flag to render meshes once lightmap is complete
+  // @todo proper lightmap opt-out
+  const [afterInit, setAfterInit] = useState(false);
+  useLayoutEffect(() => {
+    setTimeout(() => {
+      setAfterInit(true);
+    }, 0);
+  }, []);
+
+  const entryColor = isLocked
+    ? new THREE.Color('#ff0000')
+    : waitingSignal
+    ? new THREE.Color('#202020')
+    : new THREE.Color('#00ff00');
+  const exitColor = isLocked
+    ? new THREE.Color('#ff0000')
+    : waitingSignal
+    ? new THREE.Color('#202020')
+    : new THREE.Color('#ff0000');
 
   return (
     <>
@@ -94,6 +115,7 @@ export const Elevator: React.FC<{
         />
       </mesh>
 
+      {/* movable doors on south side */}
       <AutoUV2Ignore>
         <group position={[0, -1.9, 0]}>
           <animated.mesh position={leftDoorPos as any} castShadow>
@@ -128,6 +150,7 @@ export const Elevator: React.FC<{
           />
         </group>
 
+        {/* fake doors on north side */}
         <group position={[0, 1.9, 0]}>
           <mesh position={[-0.5, 0, 0.9]} castShadow>
             <boxBufferGeometry args={[1, 0.15, 1.8]} />
@@ -143,6 +166,25 @@ export const Elevator: React.FC<{
             <WorldUV scale={0.25} />
           </mesh>
         </group>
+
+        <mesh position={[0, -1.75, 1.9]}>
+          <boxBufferGeometry args={[2.2, 0.1, 0.15]} />
+          <meshStandardMaterial
+            color="#101010"
+            emissive={afterInit ? entryColor : undefined}
+            emissiveIntensity={1.2}
+            roughness={0.3}
+          />
+        </mesh>
+        <mesh position={[0, 1.75, 1.9]}>
+          <boxBufferGeometry args={[2.2, 0.1, 0.15]} />
+          <meshStandardMaterial
+            color="#101010"
+            emissive={afterInit ? exitColor : undefined}
+            emissiveIntensity={1.2}
+            roughness={0.3}
+          />
+        </mesh>
       </AutoUV2Ignore>
 
       <Sensor
