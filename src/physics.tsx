@@ -274,12 +274,21 @@ export const FPSBody: React.FC<{
     // computation helper
     const impulseTmp = new b2.Vec2(0, 0);
 
+    // @todo also deal with body rotation
+    fpsObject.updateWorldMatrix(true, false); // @todo avoid if already updated?
+    tmpVector.copy(fpsObject.position);
+    tmpVector.applyMatrix4(fpsObject.parent!.matrixWorld); // also apply the parent's transform before inverting
+
+    const parentInverse = new THREE.Matrix4();
+    parentInverse.copy(fpsObject.parent!.matrixWorld);
+    parentInverse.invert();
+
     const bodyDef = new b2.BodyDef();
     const fixDef = new b2.FixtureDef();
 
     bodyDef.type = b2.dynamicBody;
-    bodyDef.position.x = fpsObject.position.x;
-    bodyDef.position.y = fpsObject.position.y;
+    bodyDef.position.x = tmpVector.x;
+    bodyDef.position.y = tmpVector.y;
     bodyDef.angle = 0;
     bodyDef.linearDamping = 10;
     bodyDef.angularDamping = 10;
@@ -325,7 +334,7 @@ export const FPSBody: React.FC<{
       body.GetPosition(),
       fpsObject,
       zOffset,
-      new THREE.Matrix4()
+      parentInverse
     ];
     bodyListeners.push(tuple);
 
@@ -359,7 +368,8 @@ export const Body: React.FC<{
   isStatic?: boolean;
   isKinematic?: boolean;
   initShape?: () => b2.Shape | b2.Shape[];
-}> = ({ isStatic, isKinematic, initShape }) => {
+  isWorldRelative?: boolean;
+}> = ({ isStatic, isKinematic, initShape, isWorldRelative }) => {
   const initShapeRef = useRef(initShape); // storing value only once
 
   const info = useContext(PhysicsContext);
@@ -374,17 +384,22 @@ export const Body: React.FC<{
     const meshGeom =
       meshObject instanceof THREE.Mesh ? meshObject.geometry : null;
 
+    // @todo also deal with body rotation
+    tmpVector.copy(meshObject.position);
+    const parentInverse = new THREE.Matrix4();
+
+    if (!isWorldRelative) {
+      // also apply the parent's transform
+      meshObject.updateWorldMatrix(true, false); // @todo avoid if already updated?
+      tmpVector.applyMatrix4(meshObject.parent!.matrixWorld);
+
+      // prepare inverse transform for feeding physics world position back into ThreeJS
+      parentInverse.copy(meshObject.parent!.matrixWorld);
+      parentInverse.invert();
+    }
+
     const bodyDef = new b2.BodyDef();
     const fixDef = new b2.FixtureDef();
-
-    // @todo also deal with body rotation
-    meshObject.updateWorldMatrix(true, false); // @todo avoid if already updated?
-    tmpVector.copy(meshObject.position);
-    tmpVector.applyMatrix4(meshObject.parent!.matrixWorld); // also apply the parent's transform before inverting
-
-    const parentInverse = new THREE.Matrix4();
-    parentInverse.copy(meshObject.parent!.matrixWorld);
-    parentInverse.invert();
 
     bodyDef.type = isStatic
       ? b2.staticBody

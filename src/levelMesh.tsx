@@ -122,6 +122,7 @@ function createFloorFromVolume(
     return (
       <Body
         isStatic // static body ensures continuous collision detection is enabled, to avoid tunnelling
+        isWorldRelative // avoid applying local transform to the above world-coord-based polygons
         initShape={() => shape}
       />
     );

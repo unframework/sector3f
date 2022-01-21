@@ -9,8 +9,9 @@ import { StaticLevel } from './StaticLevel';
 import { TargetLevel } from './TargetLevel';
 
 const FPSCamera: React.FC<{
+  position: [number, number, number];
   look: { pitch: number; yaw: number };
-}> = ({ look, children }) => {
+}> = ({ position, look, children }) => {
   const cameraBaseRef = useRef<THREE.Object3D | null>(null);
 
   useFrame(({ camera }) => {
@@ -34,23 +35,45 @@ const FPSCamera: React.FC<{
       .applyMatrix4(cameraBaseRef.current.matrixWorld);
   }, 0);
 
+  // position must be on the base object itself, not parent, for z-offset to get picked up
   return (
-    <group position={[1, -8, 1.25]} ref={cameraBaseRef}>
+    <group position={position} ref={cameraBaseRef}>
       {children}
     </group>
   );
+};
+
+const CompletionTracker: React.FC<{ onComplete: () => void }> = ({
+  onComplete
+}) => {
+  // keep latest reference
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
+  useLayoutEffect(() => {
+    return () => {
+      onCompleteRef.current();
+    };
+  }, []);
+
+  return null;
 };
 
 export const MainStage: React.FC = () => {
   const cameraLook = useCameraLook();
   const wasdMovement = useWASD();
 
+  const [prepForTeleport, setPrepForTeleport] = useState(false);
+  const [activeTeleport, setActiveTeleport] = useState(false);
+
   return (
     <group>
       <TopDownPhysics>
-        <FPSCamera look={cameraLook}>
-          <FPSBody radius={0.3} movement={wasdMovement} look={cameraLook} />
-        </FPSCamera>
+        {activeTeleport ? null : (
+          <FPSCamera position={[1, -8, 1.25]} look={cameraLook}>
+            <FPSBody radius={0.3} movement={wasdMovement} look={cameraLook} />
+          </FPSCamera>
+        )}
 
         <React.Suspense
           fallback={
@@ -64,17 +87,43 @@ export const MainStage: React.FC = () => {
             </>
           }
         >
-          <StaticLevel />
+          <StaticLevel
+            onComplete={() => {
+              console.log('ready for teleport');
+              setPrepForTeleport(true);
+            }}
+          />
         </React.Suspense>
       </TopDownPhysics>
 
-      <TopDownPhysics>
-        <React.Suspense fallback={null}>
-          <group position={[8, 0, 0]}>
-            <TargetLevel />
-          </group>
-        </React.Suspense>
-      </TopDownPhysics>
+      {prepForTeleport && (
+        <group position={[6, 2, 0]}>
+          <TopDownPhysics>
+            {activeTeleport ? (
+              <FPSCamera position={[0, 0, 1.25]} look={cameraLook}>
+                <FPSBody
+                  radius={0.3}
+                  movement={wasdMovement}
+                  look={cameraLook}
+                />
+              </FPSCamera>
+            ) : null}
+
+            <React.Suspense
+              fallback={
+                <CompletionTracker
+                  onComplete={() => {
+                    console.log('target level ready');
+                    setActiveTeleport(true);
+                  }}
+                />
+              }
+            >
+              <TargetLevel />
+            </React.Suspense>
+          </TopDownPhysics>
+        </group>
+      )}
     </group>
   );
 };
