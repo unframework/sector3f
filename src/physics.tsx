@@ -4,7 +4,6 @@ import * as THREE from 'three';
 
 import { WASDState } from './wasd';
 import { ThreeDummy } from './scene';
-// @todo avoid using globals
 import { g_debugDraw, g_camera } from './box2dDebugDraw';
 
 export type ZQuery = (x: number, y: number) => number | null;
@@ -83,6 +82,72 @@ const STEP = 1 / 60;
 
 const DUMMY_Z_QUERY = () => null;
 
+// draw all the ongoing simulations at once, for current global camera view
+const debugWorldList: b2.World[] = [];
+export const DebugTopDownPhysics: React.FC = ({ children }) => {
+  useEffect(() => {
+    const canvas = document.createElement('canvas');
+    document.body.appendChild(canvas);
+    canvas.className = 'physicsDebug';
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    const ctx = canvas.getContext('2d')!;
+
+    g_camera.m_center.x = 0;
+    g_camera.m_center.y = 0;
+    g_camera.m_extent = 10;
+    g_camera.m_width = canvas.width;
+    g_camera.m_height = canvas.height;
+
+    g_debugDraw.m_ctx = ctx;
+    g_debugDraw.m_drawFlags = b2.DrawFlags.e_shapeBit;
+
+    // RAF loop
+    let isStopped = false;
+
+    function update() {
+      if (isStopped) {
+        return;
+      }
+
+      // debug draw
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.translate(0.5 * canvas.width, 0.5 * canvas.height);
+      ctx.scale(1, -1);
+
+      const s: number = (0.5 * g_camera.m_height) / g_camera.m_extent;
+      ctx.scale(s, s);
+      ctx.lineWidth /= s;
+
+      ctx.scale(1 / g_camera.m_zoom, 1 / g_camera.m_zoom);
+      ctx.lineWidth *= g_camera.m_zoom;
+      ctx.translate(-g_camera.m_center.x, -g_camera.m_center.y);
+
+      for (const world of debugWorldList) {
+        world.DebugDraw();
+      }
+
+      ctx.restore();
+
+      // restart
+      requestAnimationFrame(update);
+    }
+
+    // kick off initial run in next RAF tick
+    requestAnimationFrame(update);
+
+    // clean up canvas and RAF
+    return () => {
+      isStopped = true;
+      canvas.parentElement!.removeChild(canvas);
+    };
+  }, []);
+
+  return null;
+};
+
 export const TopDownPhysics: React.FC = ({ children }) => {
   // initialize context value
   const [activeContextValue] = useState<PhysicsInfo>(() => {
@@ -111,23 +176,8 @@ export const TopDownPhysics: React.FC = ({ children }) => {
     const upVector = new THREE.Vector3(0, 0, 1); // reusable helper
     const tmpPosVector = new THREE.Vector3(); // reusable helper
 
-    const canvas = document.createElement('canvas');
-    document.body.appendChild(canvas);
-    canvas.className = 'physicsDebug';
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    const ctx = canvas.getContext('2d')!;
-
-    g_camera.m_center.x = 0;
-    g_camera.m_center.y = 0;
-    g_camera.m_extent = 10;
-    g_camera.m_width = canvas.width;
-    g_camera.m_height = canvas.height;
-
-    g_debugDraw.m_ctx = ctx;
-    g_debugDraw.m_drawFlags = b2.DrawFlags.e_shapeBit;
-
     world.SetDebugDraw(g_debugDraw);
+    debugWorldList.push(world);
 
     const timer = createStepTimer(STEP, () => {
       // update bodies before solve
@@ -137,25 +187,6 @@ export const TopDownPhysics: React.FC = ({ children }) => {
 
       // solve physics
       world.Step(STEP, 3, 3);
-
-      // debug draw
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      ctx.save();
-      ctx.translate(0.5 * canvas.width, 0.5 * canvas.height);
-      ctx.scale(1, -1);
-
-      const s: number = (0.5 * g_camera.m_height) / g_camera.m_extent;
-      ctx.scale(s, s);
-      ctx.lineWidth /= s;
-
-      ctx.scale(1 / g_camera.m_zoom, 1 / g_camera.m_zoom);
-      ctx.lineWidth *= g_camera.m_zoom;
-      ctx.translate(-g_camera.m_center.x, -g_camera.m_center.y);
-
-      world.DebugDraw();
-
-      ctx.restore();
 
       // get latest Z-query for this frame
       const zQuery = activeContextValue.zQuery || DUMMY_Z_QUERY;
@@ -200,8 +231,10 @@ export const TopDownPhysics: React.FC = ({ children }) => {
     return () => {
       timer.stop();
 
-      // clean up debug
-      canvas.parentElement!.removeChild(canvas);
+      const index = debugWorldList.indexOf(world);
+      if (index !== -1) {
+        debugWorldList.splice(index, 1);
+      }
     };
   }, [activeContextValue]);
 

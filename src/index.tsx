@@ -7,6 +7,7 @@ import { PerspectiveCamera, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
 import { MainStage } from './MainStage';
+import { DebugTopDownPhysics } from './physics';
 
 import './index.css';
 
@@ -36,6 +37,8 @@ const App: React.FC = () => {
         />
         <OrbitControls target={[0, 0, 0]} />
         */}
+
+        <DebugTopDownPhysics />
 
         <React.Suspense fallback={null}>
           <MainStage />
