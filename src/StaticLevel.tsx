@@ -50,9 +50,9 @@ export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
 const rampMatrix = new THREE.Matrix4();
 rampMatrix.makeShear(0, 0.5, 0, 0, 0, 0);
 
-export const StaticLevel: React.FC<{ onComplete: () => void }> = ({
-  onComplete
-}) => {
+export const StaticLevel: React.FC<{
+  onComplete: (teleportOrigin: [number, number]) => void;
+}> = ({ onComplete }) => {
   const concreteTexture = useLoader(THREE.TextureLoader, concreteTextureUrl);
   concreteTexture.wrapS = THREE.RepeatWrapping;
   concreteTexture.wrapT = THREE.RepeatWrapping;
@@ -104,7 +104,7 @@ export const StaticLevel: React.FC<{ onComplete: () => void }> = ({
             isLocked={elevatorLocked}
             onInside={() => {
               setElevatorLocked(true);
-              onComplete();
+              onComplete([1, 2]);
             }}
           />
 

@@ -252,7 +252,10 @@ export const FPSBody: React.FC<{
   radius: number;
   movement: WASDState;
   look: { yaw: number };
-}> = ({ radius, movement, look }) => {
+  bodyRef?: React.MutableRefObject<b2.Body | undefined>;
+  cloneBody?: b2.Body; // when creating, clone dynamics from given body
+  cloneOrigin?: [number, number];
+}> = ({ radius, movement, look, bodyRef, cloneBody, cloneOrigin }) => {
   // one-time read
   const initialRadiusRef = useRef(radius);
 
@@ -287,12 +290,25 @@ export const FPSBody: React.FC<{
     const fixDef = new b2.FixtureDef();
 
     bodyDef.type = b2.dynamicBody;
-    bodyDef.position.x = tmpVector.x;
-    bodyDef.position.y = tmpVector.y;
-    bodyDef.angle = 0;
+    bodyDef.position.Set(tmpVector.x, tmpVector.y);
     bodyDef.linearDamping = 10;
     bodyDef.angularDamping = 10;
     bodyDef.fixedRotation = true;
+
+    if (cloneBody) {
+      const cloneOriginX = cloneOrigin ? cloneOrigin[0] : 0;
+      const cloneOriginY = cloneOrigin ? cloneOrigin[1] : 0;
+
+      // shift position by same relative distance as original from the clone origin
+      bodyDef.position.SelfAddXY(
+        cloneBody.GetPosition().x - cloneOriginX,
+        cloneBody.GetPosition().y - cloneOriginY
+      );
+
+      // copy other dynamics
+      bodyDef.linearVelocity.Copy(cloneBody.GetLinearVelocity());
+    }
+
     const body = world.CreateBody(bodyDef);
 
     const zOffset = fpsObject.position.z; // for later
@@ -338,8 +354,17 @@ export const FPSBody: React.FC<{
     ];
     bodyListeners.push(tuple);
 
+    // expose reference to body itself
+    if (bodyRef) {
+      bodyRef.current = body;
+    }
+
     // clean up
     return () => {
+      if (bodyRef) {
+        bodyRef.current = undefined;
+      }
+
       world.DestroyBody(body);
 
       const updaterIndex = bodyUpdaters.indexOf(updater);

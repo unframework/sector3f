@@ -2,6 +2,7 @@ import React, { useLayoutEffect, useState, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
+import * as b2 from '@flyover/box2d';
 
 import { useWASD, useCameraLook } from './wasd';
 import { TopDownPhysics, Body, FPSBody } from './physics';
@@ -63,7 +64,14 @@ export const MainStage: React.FC = () => {
   const cameraLook = useCameraLook();
   const wasdMovement = useWASD();
 
-  const [prepForTeleport, setPrepForTeleport] = useState(false);
+  const fpsBodyRef = useRef<b2.Body>();
+
+  // when level is complete, store the teleport room (elevator) center as reference
+  const [teleportRequestOrigin, setTeleportRequestOrigin] = useState<
+    [number, number] | null
+  >(null);
+
+  // set when new level is baked and ready
   const [activeTeleport, setActiveTeleport] = useState(false);
 
   return (
@@ -71,7 +79,12 @@ export const MainStage: React.FC = () => {
       <TopDownPhysics>
         {activeTeleport ? null : (
           <FPSCamera position={[1, -8, 1.25]} look={cameraLook}>
-            <FPSBody radius={0.3} movement={wasdMovement} look={cameraLook} />
+            <FPSBody
+              radius={0.3}
+              movement={wasdMovement}
+              look={cameraLook}
+              bodyRef={fpsBodyRef}
+            />
           </FPSCamera>
         )}
 
@@ -88,15 +101,15 @@ export const MainStage: React.FC = () => {
           }
         >
           <StaticLevel
-            onComplete={() => {
-              console.log('ready for teleport');
-              setPrepForTeleport(true);
+            onComplete={teleportOrigin => {
+              console.log('ready for teleport from', teleportOrigin);
+              setTeleportRequestOrigin(teleportOrigin);
             }}
           />
         </React.Suspense>
       </TopDownPhysics>
 
-      {prepForTeleport && (
+      {teleportRequestOrigin && (
         <group position={[6, 2, 0]}>
           <TopDownPhysics>
             {activeTeleport ? (
@@ -105,6 +118,9 @@ export const MainStage: React.FC = () => {
                   radius={0.3}
                   movement={wasdMovement}
                   look={cameraLook}
+                  // also seamlessly transfer relative position, etc
+                  cloneBody={fpsBodyRef.current}
+                  cloneOrigin={teleportRequestOrigin}
                 />
               </FPSCamera>
             ) : null}
