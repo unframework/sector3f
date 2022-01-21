@@ -339,6 +339,8 @@ export const CSGRoot: React.FC<CSGRootProps> = ({
   debug,
   children
 }) => {
+  const rootRef = useRef<THREE.Object3D>();
+
   // read once
   const materialsRef = useRef(materials);
   const onReadyRef = useRef(onReady);
@@ -388,8 +390,9 @@ export const CSGRoot: React.FC<CSGRootProps> = ({
     // flip to show interior
     const csg = union.inverse();
 
-    // @todo use root's world matrix
-    const geomResult = csg.toGeometry(identity);
+    // use root's world matrix as origin for vertices
+    rootRef.current!.updateWorldMatrix(true, false);
+    const geomResult = csg.toGeometry(rootRef.current!.matrixWorld);
 
     // remove index to trigger lightmapper's own vertex "welding" logic @todo this in the CSG library
     // which will respect the group ranges and keep those faces separate
@@ -414,6 +417,8 @@ export const CSGRoot: React.FC<CSGRootProps> = ({
 
   return (
     <CSGContext.Provider value={localCtx}>
+      {!geom && <group ref={rootRef} />}
+
       {geom && (
         <mesh ref={meshRef} castShadow receiveShadow>
           <primitive attach="geometry" object={geom} />

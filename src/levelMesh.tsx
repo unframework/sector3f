@@ -163,6 +163,7 @@ export const LevelMesh: React.FC<{ materials: CSGRootProps['materials'] }> = ({
       disabled={!lightmapActive}
       texelsPerUnit={1}
       samplerSettings={{ targetSize: 32 }}
+      workPerFrame={1}
     >
       {/*<DebugOverlayWidgets />*/}
 

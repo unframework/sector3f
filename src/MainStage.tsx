@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { useWASD, useCameraLook } from './wasd';
 import { TopDownPhysics, Body, FPSBody } from './physics';
 import { StaticLevel } from './StaticLevel';
+import { TargetLevel } from './TargetLevel';
 
 const FPSCamera: React.FC<{
   look: { pitch: number; yaw: number };
@@ -45,8 +46,8 @@ export const MainStage: React.FC = () => {
   const wasdMovement = useWASD();
 
   return (
-    <TopDownPhysics>
-      <group>
+    <group>
+      <TopDownPhysics>
         <FPSCamera look={cameraLook}>
           <FPSBody radius={0.3} movement={wasdMovement} look={cameraLook} />
         </FPSCamera>
@@ -57,15 +58,23 @@ export const MainStage: React.FC = () => {
               <pointLight position={[0, 0, 6]} color="#f0f0ff" castShadow />
 
               <mesh position={[0, 0, 0]} receiveShadow>
-                <planeGeometry args={[15, 15]} />
-                <meshStandardMaterial color="#808080" roughness={0.6} />
+                <boxGeometry args={[3, 3, 3]} />
+                <meshBasicMaterial color="#ff0000" wireframe />
               </mesh>
             </>
           }
         >
           <StaticLevel />
         </React.Suspense>
-      </group>
-    </TopDownPhysics>
+      </TopDownPhysics>
+
+      <TopDownPhysics>
+        <React.Suspense fallback={null}>
+          <group position={[8, 0, 0]}>
+            <TargetLevel />
+          </group>
+        </React.Suspense>
+      </TopDownPhysics>
+    </group>
   );
 };
