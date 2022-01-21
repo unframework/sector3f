@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 // helper scene object that reads the parent object reference
 export const ThreeDummy: React.FC<{
-  init: (parentNode: THREE.Object3D) => void; // runs only once in useEffect
+  init: (parentNode: THREE.Object3D) => (() => void) | void; // runs only once in useEffect
 }> = ({ init }) => {
   const initRef = useRef(init); // read only once
 
@@ -25,7 +25,9 @@ export const ThreeDummy: React.FC<{
     setParentObject(obj3d);
 
     // notify caller
-    initRef.current(obj3d);
+    const cleanup = initRef.current(obj3d);
+
+    return cleanup;
   }, []);
 
   // if parentObject is known, then no need to render the group anymore
