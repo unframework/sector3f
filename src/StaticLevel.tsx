@@ -1,18 +1,11 @@
 import React, { useRef, useState, useLayoutEffect } from 'react';
 import * as b2 from '@flyover/box2d';
-import { useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
 
 import { CSGRoot, CSGOp, CSGContent } from './csg';
 import { LevelMesh, WorldUV } from './levelMesh';
 
 import { Elevator } from './level/Elevator';
-
-// texture from https://opengameart.org/content/metalstone-textures by Spiney
-import concreteTextureUrl from './ft_conc01_c.png';
-
-// texture from https://opengameart.org/content/50-2k-metal-textures by rubberduck
-import panelTextureUrl from './level/panels.png';
 
 export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
   return (
@@ -53,15 +46,6 @@ rampMatrix.makeShear(0, 0.5, 0, 0, 0, 0);
 export const StaticLevel: React.FC<{
   onComplete: (teleportOrigin: [number, number]) => void;
 }> = ({ onComplete }) => {
-  const concreteTexture = useLoader(THREE.TextureLoader, concreteTextureUrl);
-  concreteTexture.wrapS = THREE.RepeatWrapping;
-  concreteTexture.wrapT = THREE.RepeatWrapping;
-
-  const panelTexture = useLoader(THREE.TextureLoader, panelTextureUrl);
-  panelTexture.wrapS = THREE.RepeatWrapping;
-  panelTexture.wrapT = THREE.RepeatWrapping;
-  // panelTexture.magFilter = THREE.NearestFilter;
-
   const spotLightRef = useRef<THREE.SpotLight>();
   const spotLightTargetRef = useRef<THREE.Object3D>();
   useLayoutEffect(() => {
@@ -72,20 +56,7 @@ export const StaticLevel: React.FC<{
 
   return (
     <>
-      <LevelMesh
-        materials={{
-          default: <meshStandardMaterial map={concreteTexture} />,
-          floorLight: (
-            <meshStandardMaterial
-              color="#f0f8ff"
-              emissive={new THREE.Color('#f0f8ff')}
-            />
-          ),
-          elevator: <meshStandardMaterial color="#a0a0a0" map={panelTexture} />,
-          elevatorCeiling: <meshStandardMaterial color="#404040" />,
-          elevatorTrim: <meshStandardMaterial color="#202020" />
-        }}
-      >
+      <LevelMesh>
         {/*<group matrix={rampMatrix} matrixAutoUpdate={false}>
           <CSGContent>
             <mesh position={[-2, 1, 1.5]}>

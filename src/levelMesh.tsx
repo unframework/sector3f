@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { booleans, primitives, geometries } from '@jscad/modeling';
 import { Polygon } from 'three-csg-ts/lib/esm/Polygon'; // @todo fix exports upstream
 import { Vertex } from 'three-csg-ts/lib/esm/Vertex'; // @todo fix exports upstream
-import { useFrame } from '@react-three/fiber';
+import { useLoader, useFrame } from '@react-three/fiber';
 import { Lightmap } from '@react-three/lightmap';
 import * as THREE from 'three';
 import * as b2 from '@flyover/box2d';
@@ -12,6 +12,12 @@ import { CSGRoot, CSGRootProps } from './csg';
 import { applyUVProjection } from './uvProjection';
 import { ThreeDummy } from './scene';
 import { DebugOverlayWidgets } from './lmDebug';
+
+// texture from https://opengameart.org/content/metalstone-textures by Spiney
+import concreteTextureUrl from './ft_conc01_c.png';
+
+// texture from https://opengameart.org/content/50-2k-metal-textures by rubberduck
+import panelTextureUrl from './level/panels.png';
 
 // temp math helpers
 const tmpNormal = new THREE.Vector3();
@@ -149,10 +155,17 @@ export const WorldUV: React.FC<{ scale?: number }> = ({ scale, children }) => {
   );
 };
 
-export const LevelMesh: React.FC<{ materials: CSGRootProps['materials'] }> = ({
-  materials,
-  children
-}) => {
+export const LevelMesh: React.FC = ({ children }) => {
+  // textures for named CSG materials
+  const concreteTexture = useLoader(THREE.TextureLoader, concreteTextureUrl);
+  concreteTexture.wrapS = THREE.RepeatWrapping;
+  concreteTexture.wrapT = THREE.RepeatWrapping;
+
+  const panelTexture = useLoader(THREE.TextureLoader, panelTextureUrl);
+  panelTexture.wrapS = THREE.RepeatWrapping;
+  panelTexture.wrapT = THREE.RepeatWrapping;
+  // panelTexture.magFilter = THREE.NearestFilter;
+
   const [floorBody, setFloorBody] = useState<React.ReactElement | null>(null);
   const [zQuery, setZQuery] = useState<ZQuery | null>(null);
   const [lightmapActive, setLightmapActive] = useState(false);
@@ -169,7 +182,20 @@ export const LevelMesh: React.FC<{ materials: CSGRootProps['materials'] }> = ({
       {/*<DebugOverlayWidgets />*/}
 
       <CSGRoot
-        materials={materials}
+        // named CSG materials used across the board
+        // (centrally defined here to help consistency across sub-components)
+        materials={{
+          default: <meshStandardMaterial map={concreteTexture} />,
+          floorLight: (
+            <meshStandardMaterial
+              color="#f0f8ff"
+              emissive={new THREE.Color('#f0f8ff')}
+            />
+          ),
+          elevator: <meshStandardMaterial color="#a0a0a0" map={panelTexture} />,
+          elevatorCeiling: <meshStandardMaterial color="#404040" />,
+          elevatorTrim: <meshStandardMaterial color="#202020" />
+        }}
         onReady={(csg, materialMap) => {
           const matIndexes = ['default', 'elevatorTrim', 'floorLight'].map(
             item => materialMap[item]
