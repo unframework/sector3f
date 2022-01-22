@@ -1,8 +1,7 @@
 import React, { useRef, useState, useLayoutEffect } from 'react';
 import * as b2 from '@flyover/box2d';
 import { useLoader } from '@react-three/fiber';
-import { MeshReflectorMaterial } from '@react-three/drei';
-import { LightmapReadOnly } from '@react-three/lightmap';
+import { LightmapReadOnly, LightmapIgnore } from '@react-three/lightmap';
 import { useSpring, animated } from '@react-spring/three';
 import * as THREE from 'three';
 
@@ -100,19 +99,7 @@ export const Elevator: React.FC<{
         receiveShadow
       >
         <planeGeometry args={[3.4, 3.4]} />
-        <MeshReflectorMaterial
-          color="#c0c0c0"
-          blur={[400, 400]}
-          mirror={0.1}
-          resolution={512}
-          mixBlur={1}
-          mixStrength={0.85}
-          depthScale={0.5}
-          minDepthThreshold={0.1}
-          maxDepthThreshold={1.5}
-          metalness={0}
-          roughness={1}
-        />
+        <meshStandardMaterial color="#c0c0c0" />
       </mesh>
 
       {/* movable doors on south side */}
@@ -199,14 +186,17 @@ export const Elevator: React.FC<{
         }}
       />
 
-      <pointLight
-        position={[0, 0, 1.75]}
-        distance={8}
-        decay={2}
-        color="#f0ffff"
-        castShadow
-        intensity={0.75}
-      />
+      {/* extra light just for door shadows */}
+      <LightmapIgnore>
+        <pointLight
+          position={[0, 0, 1.75]}
+          distance={8}
+          decay={2}
+          color="#f0ffff"
+          castShadow
+          intensity={0.75}
+        />
+      </LightmapIgnore>
     </>
   );
 };

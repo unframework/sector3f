@@ -99,8 +99,6 @@ export const StaticLevel: React.FC<{
           <Elevator isLocked={false} onInside={() => {}} />
         </group>
       </LevelMesh>
-
-      <ambientLight color="#202020" />
     </>
   );
 };

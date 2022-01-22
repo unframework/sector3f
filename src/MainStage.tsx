@@ -76,6 +76,8 @@ export const MainStage: React.FC = () => {
 
   return (
     <group>
+      <ambientLight color="#202020" />
+
       <TopDownPhysics>
         {teleportRequestOrigin && targetIsReady ? null : (
           <FPSCamera position={[1, -12, 1.25]} look={cameraLook}>
