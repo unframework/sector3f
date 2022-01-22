@@ -6,24 +6,21 @@ import * as THREE from 'three';
 import { CSGRoot, CSGOp, CSGContent } from './csg';
 import { LevelMesh, WorldUV } from './levelMesh';
 
+import { Elevator } from './level/Elevator';
+
 export const TargetLevel: React.FC = () => {
   return (
     <LevelMesh>
       <CSGContent>
-        <mesh position={[0, 0, 1]}>
-          <boxBufferGeometry args={[4, 4, 2]} />
+        <mesh position={[0, -5, 1]}>
+          <boxBufferGeometry args={[2, 10, 2]} />
           <WorldUV />
         </mesh>
       </CSGContent>
 
-      <pointLight
-        position={[0, 0, 1.75]}
-        distance={8}
-        decay={2}
-        color="#f0ffff"
-        castShadow
-        intensity={0.75}
-      />
+      <group position={[0, -12, 0]} rotation={[0, 0, Math.PI]}>
+        <Elevator isLocked={false} onInside={() => {}} />
+      </group>
     </LevelMesh>
   );
 };

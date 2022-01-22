@@ -110,10 +110,10 @@ export const MainStage: React.FC = () => {
       </TopDownPhysics>
 
       {teleportRequestOrigin && (
-        <group position={[6, 2, 0]}>
+        <group position={[20, 0, 0]}>
           <TopDownPhysics>
             {activeTeleport ? (
-              <FPSCamera position={[0, 0, 1.25]} look={cameraLook}>
+              <FPSCamera position={[0, -12, 1.25]} look={cameraLook}>
                 <FPSBody
                   radius={0.3}
                   movement={wasdMovement}

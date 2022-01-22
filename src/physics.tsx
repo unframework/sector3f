@@ -307,6 +307,13 @@ export const FPSBody: React.FC<{
 
       // copy other dynamics
       bodyDef.linearVelocity.Copy(cloneBody.GetLinearVelocity());
+
+      // update the ThreeJS position without waiting for next frame
+      // (no need to update angle because the camera already tracks that independently)
+      tmpVector.x = bodyDef.position.x;
+      tmpVector.y = bodyDef.position.y;
+      tmpVector.applyMatrix4(parentInverse);
+      fpsObject.position.copy(tmpVector);
     }
 
     const body = world.CreateBody(bodyDef);
