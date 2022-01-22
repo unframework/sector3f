@@ -2,7 +2,7 @@ import React, { useRef, useState, useLayoutEffect } from 'react';
 import * as b2 from '@flyover/box2d';
 import { useLoader } from '@react-three/fiber';
 import { MeshReflectorMaterial } from '@react-three/drei';
-import { AutoUV2Ignore } from '@react-three/lightmap';
+import { LightmapReadOnly } from '@react-three/lightmap';
 import { useSpring, animated } from '@react-spring/three';
 import * as THREE from 'three';
 
@@ -116,7 +116,7 @@ export const Elevator: React.FC<{
       </mesh>
 
       {/* movable doors on south side */}
-      <AutoUV2Ignore>
+      <LightmapReadOnly>
         <group position={[0, -1.9, 0]}>
           <animated.mesh position={leftDoorPos as any} castShadow>
             <boxBufferGeometry args={[1, 0.15, 1.8]} />
@@ -185,7 +185,7 @@ export const Elevator: React.FC<{
             roughness={0.3}
           />
         </mesh>
-      </AutoUV2Ignore>
+      </LightmapReadOnly>
 
       <Sensor
         initShape={() => {

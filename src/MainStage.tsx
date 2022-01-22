@@ -72,12 +72,12 @@ export const MainStage: React.FC = () => {
   >(null);
 
   // set when new level is baked and ready
-  const [activeTeleport, setActiveTeleport] = useState(false);
+  const [targetIsReady, setTargetIsReady] = useState(false);
 
   return (
     <group>
       <TopDownPhysics>
-        {activeTeleport ? null : (
+        {teleportRequestOrigin && targetIsReady ? null : (
           <FPSCamera position={[1, -12, 1.25]} look={cameraLook}>
             <FPSBody
               radius={0.3}
@@ -110,9 +110,9 @@ export const MainStage: React.FC = () => {
       </TopDownPhysics>
 
       {teleportRequestOrigin && (
-        <group position={[20, 0, 0]}>
+        <group position={[8, 0, 0]}>
           <TopDownPhysics>
-            {activeTeleport ? (
+            {teleportRequestOrigin && targetIsReady ? (
               <FPSCamera position={[0, -12, 1.25]} look={cameraLook}>
                 <FPSBody
                   radius={0.3}
@@ -130,7 +130,7 @@ export const MainStage: React.FC = () => {
                 <CompletionTracker
                   onComplete={() => {
                     console.log('target level ready');
-                    setActiveTeleport(true);
+                    setTimeout(() => setTargetIsReady(true), 1000);
                   }}
                 />
               }
