@@ -33,6 +33,12 @@ module.exports = {
   ],
 
   devServer: {
-    inline: true
+    static: [
+      {
+        directory:
+          'C:\\Users\\nickm\\Google Drive\\Gamedev\\Sector3f Public Assets',
+        publicPath: '/assets'
+      }
+    ]
   }
 };
