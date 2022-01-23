@@ -80,7 +80,7 @@ export const MainStage: React.FC = () => {
 
       <TopDownPhysics>
         {teleportRequestOrigin && targetIsReady ? null : (
-          <FPSCamera position={[1, -12, 1.75]} look={cameraLook}>
+          <FPSCamera position={[1, -11, 1.75]} look={cameraLook}>
             <FPSBody
               radius={0.3}
               movement={wasdMovement}
@@ -115,7 +115,7 @@ export const MainStage: React.FC = () => {
         <group position={[9, 0, 0]}>
           <TopDownPhysics>
             {teleportRequestOrigin && targetIsReady ? (
-              <FPSCamera position={[0, -12, 1.75]} look={cameraLook}>
+              <FPSCamera position={[0, -10, 1.75]} look={cameraLook}>
                 <FPSBody
                   radius={0.3}
                   movement={wasdMovement}

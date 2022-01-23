@@ -18,7 +18,7 @@ export const UtilityCorridor: React.FC<{ color?: string }> = ({ color }) => {
         ]}
       >
         <mesh position={[0, 0, 1.25]}>
-          <boxBufferGeometry args={[2, 10, 2.5]} />
+          <boxBufferGeometry args={[2, 8, 2.5]} />
           <WorldUV />
         </mesh>
       </CSGContent>
