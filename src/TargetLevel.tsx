@@ -12,13 +12,13 @@ export const TargetLevel: React.FC = () => {
   return (
     <LevelMesh>
       <CSGContent>
-        <mesh position={[0, -4, 1.5]}>
+        <mesh position={[1, 7, 1.5]}>
           <boxBufferGeometry args={[2, 8, 3]} />
           <WorldUV />
         </mesh>
       </CSGContent>
 
-      <group position={[0, -10, 0]} rotation={[0, 0, Math.PI]}>
+      <group position={[1, 1, 0]} rotation={[0, 0, Math.PI]}>
         <Elevator isLocked={false} onInside={() => {}} />
       </group>
     </LevelMesh>

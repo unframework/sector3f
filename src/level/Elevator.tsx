@@ -191,7 +191,7 @@ export const Elevator: React.FC<{
       {/* extra light just for door shadows */}
       <LightmapIgnore>
         <pointLight
-          position={[0, 0, 1.8]}
+          position={[0, 0, 1.5]}
           distance={6}
           decay={2}
           color="#f0ffff"

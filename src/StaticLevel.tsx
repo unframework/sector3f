@@ -34,17 +34,17 @@ export const StaticLevel: React.FC<{
           </CSGContent>
         </group>*/}
 
-        <group position={[1, -4, 0]}>
+        <group position={[1, 7, 0]}>
           <UtilityCorridor />
         </group>
 
-        <group position={[1, 2, 0]}>
+        <group position={[1, 13, 0]}>
           <Elevator
             waitingSignal
             isLocked={elevatorLocked}
             onInside={() => {
               setElevatorLocked(true);
-              onComplete([1, 2]);
+              onComplete([1, 13]);
             }}
           />
 
@@ -63,7 +63,7 @@ export const StaticLevel: React.FC<{
           <group position={[0, -2.5, 0]} ref={spotLightTargetRef} />
         </group>
 
-        <group position={[1, -10, 0]} rotation={[0, 0, Math.PI]}>
+        <group position={[1, 1, 0]} rotation={[0, 0, Math.PI]}>
           <Elevator isLocked={false} onInside={() => {}} />
         </group>
       </LevelMesh>
