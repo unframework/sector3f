@@ -6,8 +6,8 @@ import * as b2 from '@flyover/box2d';
 
 import { useWASD, useCameraLook } from './wasd';
 import { TopDownPhysics, Body, FPSBody } from './physics';
-import { StaticLevel } from './StaticLevel';
-import { TargetLevel } from './TargetLevel';
+import { SimpleLevel } from './SimpleLevel';
+import { DemoEndLevel } from './DemoEndLevel';
 
 const FPSCamera: React.FC<{
   position: [number, number, number];
@@ -78,68 +78,57 @@ export const MainStage: React.FC = () => {
     <group>
       <ambientLight color="#202020" />
 
-      <TopDownPhysics>
-        {teleportRequestOrigin && targetIsReady ? null : (
-          <FPSCamera position={[1, 0.5, 1.75]} look={cameraLook}>
-            <FPSBody
-              radius={0.3}
-              movement={wasdMovement}
-              look={cameraLook}
-              bodyRef={fpsBodyRef}
-            />
-          </FPSCamera>
-        )}
+      <React.Suspense fallback={null}>
+        <TopDownPhysics>
+          {teleportRequestOrigin && targetIsReady ? null : (
+            <FPSCamera position={[1, 0.5, 1.75]} look={cameraLook}>
+              <FPSBody
+                radius={0.3}
+                movement={wasdMovement}
+                look={cameraLook}
+                bodyRef={fpsBodyRef}
+              />
+            </FPSCamera>
+          )}
 
-        <React.Suspense
-          fallback={
-            <>
-              <pointLight position={[0, 0, 6]} color="#f0f0ff" castShadow />
-
-              <mesh position={[0, 0, 0]} receiveShadow>
-                <boxGeometry args={[3, 3, 3]} />
-                <meshBasicMaterial color="#ff0000" wireframe />
-              </mesh>
-            </>
-          }
-        >
-          <StaticLevel
+          <SimpleLevel
             onComplete={teleportOrigin => {
               console.log('ready for teleport from', teleportOrigin);
               setTeleportRequestOrigin(teleportOrigin);
             }}
           />
-        </React.Suspense>
-      </TopDownPhysics>
+        </TopDownPhysics>
+      </React.Suspense>
 
       {teleportRequestOrigin && (
         <group position={[8, 0, 0]}>
-          <TopDownPhysics>
-            {teleportRequestOrigin && targetIsReady ? (
-              <FPSCamera position={[1, 1, 1.75]} look={cameraLook}>
-                <FPSBody
-                  radius={0.3}
-                  movement={wasdMovement}
-                  look={cameraLook}
-                  // also seamlessly transfer relative position, etc
-                  cloneBody={fpsBodyRef.current}
-                  cloneOrigin={teleportRequestOrigin}
-                />
-              </FPSCamera>
-            ) : null}
+          <React.Suspense
+            fallback={
+              <CompletionTracker
+                onComplete={() => {
+                  console.log('target level ready');
+                  setTimeout(() => setTargetIsReady(true), 1000);
+                }}
+              />
+            }
+          >
+            <TopDownPhysics>
+              {teleportRequestOrigin && targetIsReady ? (
+                <FPSCamera position={[1, 1, 1.75]} look={cameraLook}>
+                  <FPSBody
+                    radius={0.3}
+                    movement={wasdMovement}
+                    look={cameraLook}
+                    // also seamlessly transfer relative position, etc
+                    cloneBody={fpsBodyRef.current}
+                    cloneOrigin={teleportRequestOrigin}
+                  />
+                </FPSCamera>
+              ) : null}
 
-            <React.Suspense
-              fallback={
-                <CompletionTracker
-                  onComplete={() => {
-                    console.log('target level ready');
-                    setTimeout(() => setTargetIsReady(true), 1000);
-                  }}
-                />
-              }
-            >
-              <TargetLevel />
-            </React.Suspense>
-          </TopDownPhysics>
+              <DemoEndLevel />
+            </TopDownPhysics>
+          </React.Suspense>
         </group>
       )}
     </group>

@@ -8,7 +8,7 @@ import { LevelMesh, WorldUV } from './levelMesh';
 
 import { Elevator } from './level/Elevator';
 
-export const TargetLevel: React.FC = () => {
+export const DemoEndLevel: React.FC = () => {
   return (
     <LevelMesh>
       <CSGContent>

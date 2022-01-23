@@ -11,7 +11,7 @@ import { UtilityCorridor } from './level/UtilityCorridor';
 const rampMatrix = new THREE.Matrix4();
 rampMatrix.makeShear(0, 0.5, 0, 0, 0, 0);
 
-export const StaticLevel: React.FC<{
+export const SimpleLevel: React.FC<{
   onComplete: (teleportOrigin: [number, number]) => void;
 }> = ({ onComplete }) => {
   const spotLightRef = useRef<THREE.SpotLight>();
