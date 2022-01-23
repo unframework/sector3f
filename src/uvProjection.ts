@@ -56,7 +56,8 @@ const tmpUV = new THREE.Vector3();
 export function applyUVProjection(
   geometry: THREE.BufferGeometry,
   xform: THREE.Matrix4,
-  scale: number
+  scale: number,
+  offset: THREE.Vector3
 ) {
   tmpNormalMat.getNormalMatrix(xform);
 
@@ -83,6 +84,8 @@ export function applyUVProjection(
     tmpUV.applyMatrix4(xform);
 
     tmpUV.multiplyScalar(scale);
+    tmpUV.sub(offset); // nudge in UV coords means opposite effect on world pos
+
     tmpUV.applyMatrix4(uvMatrix);
     uvAttr.setXY(i, tmpUV.x, tmpUV.y);
   }
