@@ -3,7 +3,7 @@ import * as b2 from '@flyover/box2d';
 import { useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
 
-import { CSGRoot, CSGOp, CSGContent } from './csg';
+import { CSGOp, CSGContent } from './csg';
 import { LevelMesh, WorldUV } from './levelMesh';
 
 import { Elevator } from './level/Elevator';
