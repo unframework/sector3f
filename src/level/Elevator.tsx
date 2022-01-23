@@ -192,7 +192,7 @@ export const Elevator: React.FC<{
       <LightmapIgnore>
         <pointLight
           position={[0, 0, 1.75]}
-          distance={8}
+          distance={6}
           decay={2}
           color="#f0ffff"
           castShadow

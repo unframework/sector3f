@@ -10,7 +10,16 @@ import { Elevator } from './level/Elevator';
 export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
   return (
     <group>
-      <CSGContent>
+      <CSGContent
+        material={[
+          'blockWall',
+          'blockWall',
+          'blockWall',
+          'blockWall',
+          'default',
+          'rawConcrete'
+        ]}
+      >
         <mesh position={[0, 0, 1]}>
           <boxBufferGeometry args={[2, 10, 2]} />
           <WorldUV />
@@ -26,7 +35,7 @@ export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
         <meshStandardMaterial
           color="#202020"
           emissive={new THREE.Color(color || '#ffffe0')}
-          emissiveIntensity={2}
+          emissiveIntensity={1.2}
         />
 
         <CSGContent>

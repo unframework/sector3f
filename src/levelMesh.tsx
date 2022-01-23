@@ -157,16 +157,31 @@ export const LevelMesh: React.FC = ({ children }) => {
   );
   concreteTexture.wrapS = THREE.RepeatWrapping;
   concreteTexture.wrapT = THREE.RepeatWrapping;
-  concreteTexture.repeat.set(0.125, 0.125);
+  concreteTexture.repeat.set(0.25, 0.25);
+
+  const rawConcreteTexture = useLoader(
+    THREE.TextureLoader,
+    '/assets/opengameart/conc_base01_c_light.png'
+  );
+  rawConcreteTexture.wrapS = THREE.RepeatWrapping;
+  rawConcreteTexture.wrapT = THREE.RepeatWrapping;
+  rawConcreteTexture.repeat.set(0.125, 0.125);
+
+  const blockWallTexture = useLoader(
+    THREE.TextureLoader,
+    '/assets/chilly/Tiles-Large.png'
+  );
+  blockWallTexture.wrapS = THREE.RepeatWrapping;
+  blockWallTexture.wrapT = THREE.RepeatWrapping;
+  blockWallTexture.repeat.set(0.5, 0.5);
 
   const elevatorWallTexture = useLoader(
     THREE.TextureLoader,
-    '/assets/kenney/wall_metal.png'
+    '/assets/sbs/Wood_07.png'
   );
   elevatorWallTexture.wrapS = THREE.RepeatWrapping;
   elevatorWallTexture.wrapT = THREE.RepeatWrapping;
   elevatorWallTexture.repeat.set(0.5, 0.5);
-  elevatorWallTexture.magFilter = THREE.NearestFilter;
 
   const [floorBody, setFloorBody] = useState<React.ReactElement | null>(null);
   const [zQuery, setZQuery] = useState<ZQuery | null>(null);
@@ -188,6 +203,8 @@ export const LevelMesh: React.FC = ({ children }) => {
         // (centrally defined here to help consistency across sub-components)
         materials={{
           default: <meshStandardMaterial map={concreteTexture} />,
+          rawConcrete: <meshStandardMaterial map={rawConcreteTexture} />,
+          blockWall: <meshStandardMaterial map={blockWallTexture} />,
           floorLight: (
             <meshStandardMaterial
               color="#f0f8ff"
@@ -201,9 +218,12 @@ export const LevelMesh: React.FC = ({ children }) => {
           elevatorTrim: <meshStandardMaterial color="#202020" />
         }}
         onReady={(csg, materialMap) => {
-          const matIndexes = ['default', 'elevatorTrim', 'floorLight'].map(
-            item => materialMap[item]
-          );
+          const matIndexes = [
+            'default',
+            'rawConcrete',
+            'elevatorTrim',
+            'floorLight'
+          ].map(item => materialMap[item]);
           const polys = csg
             .toPolygons()
             .filter(item => matIndexes.includes(item.shared));
