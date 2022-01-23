@@ -9,20 +9,20 @@ import { CSGContent } from '../csg';
 import { WorldUV } from '../levelMesh';
 import { Body, Sensor } from '../physics';
 
-// texture from https://opengameart.org/content/50-2k-metal-textures by rubberduck
-import panelTextureUrl from './panels.png';
-
 export const Elevator: React.FC<{
   waitingSignal?: boolean;
   isLocked: boolean;
   onInside: () => void;
 }> = ({ waitingSignal, isLocked, onInside }) => {
   // @todo dedupe
-  const panelTexture = useLoader(THREE.TextureLoader, panelTextureUrl);
+  // texture from https://opengameart.org/content/50-2k-metal-textures by rubberduck
+  const panelTexture = useLoader(
+    THREE.TextureLoader,
+    '/assets/opengameart/panels.png'
+  );
   panelTexture.wrapS = THREE.RepeatWrapping;
   panelTexture.wrapT = THREE.RepeatWrapping;
-  panelTexture.repeat.x = 0.25;
-  panelTexture.repeat.y = 0.25;
+  panelTexture.repeat.set(0.25, 0.25);
 
   const insideRef = useRef(false); // no need for useState here
 

@@ -13,14 +13,6 @@ import { applyUVProjection } from './uvProjection';
 import { ThreeDummy } from './scene';
 import { DebugOverlayWidgets } from './lmDebug';
 
-// texture from https://opengameart.org/content/metalstone-textures by Spiney
-// import concreteTextureUrl from './ft_conc01_c.png';
-const concreteTextureUrl = '/assets/kenney/concreteSmooth.png';
-
-// texture from https://opengameart.org/content/50-2k-metal-textures by rubberduck
-// import panelTextureUrl from './level/panels.png';
-const panelTextureUrl = '/assets/kenney/wall_metal.png';
-
 // temp math helpers
 const tmpNormal = new THREE.Vector3();
 const tmpA = new THREE.Vector3();
@@ -158,20 +150,23 @@ export const WorldUV: React.FC<{ scale?: number }> = ({ scale, children }) => {
 };
 
 export const LevelMesh: React.FC = ({ children }) => {
-  // textures for named CSG materials
-  const concreteTexture = useLoader(THREE.TextureLoader, concreteTextureUrl);
+  // texture from https://opengameart.org/content/metalstone-textures by Spiney
+  const concreteTexture = useLoader(
+    THREE.TextureLoader,
+    '/assets/opengameart/ft_conc01_c.png'
+  );
   concreteTexture.wrapS = THREE.RepeatWrapping;
   concreteTexture.wrapT = THREE.RepeatWrapping;
-  concreteTexture.repeat.x = 0.5;
-  concreteTexture.repeat.y = 0.5;
-  concreteTexture.magFilter = THREE.NearestFilter;
+  concreteTexture.repeat.set(0.125, 0.125);
 
-  const panelTexture = useLoader(THREE.TextureLoader, panelTextureUrl);
-  panelTexture.wrapS = THREE.RepeatWrapping;
-  panelTexture.wrapT = THREE.RepeatWrapping;
-  panelTexture.repeat.x = 0.5;
-  panelTexture.repeat.y = 0.5;
-  panelTexture.magFilter = THREE.NearestFilter;
+  const elevatorWallTexture = useLoader(
+    THREE.TextureLoader,
+    '/assets/kenney/wall_metal.png'
+  );
+  elevatorWallTexture.wrapS = THREE.RepeatWrapping;
+  elevatorWallTexture.wrapT = THREE.RepeatWrapping;
+  elevatorWallTexture.repeat.set(0.5, 0.5);
+  elevatorWallTexture.magFilter = THREE.NearestFilter;
 
   const [floorBody, setFloorBody] = useState<React.ReactElement | null>(null);
   const [zQuery, setZQuery] = useState<ZQuery | null>(null);
@@ -199,7 +194,9 @@ export const LevelMesh: React.FC = ({ children }) => {
               emissive={new THREE.Color('#f0f8ff')}
             />
           ),
-          elevator: <meshStandardMaterial color="#a0a0a0" map={panelTexture} />,
+          elevator: (
+            <meshStandardMaterial color="#a0a0a0" map={elevatorWallTexture} />
+          ),
           elevatorCeiling: <meshStandardMaterial color="#404040" />,
           elevatorTrim: <meshStandardMaterial color="#202020" />
         }}
