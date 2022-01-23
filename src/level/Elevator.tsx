@@ -21,6 +21,8 @@ export const Elevator: React.FC<{
   const panelTexture = useLoader(THREE.TextureLoader, panelTextureUrl);
   panelTexture.wrapS = THREE.RepeatWrapping;
   panelTexture.wrapT = THREE.RepeatWrapping;
+  panelTexture.repeat.x = 0.25;
+  panelTexture.repeat.y = 0.25;
 
   const insideRef = useRef(false); // no need for useState here
 
@@ -77,19 +79,19 @@ export const Elevator: React.FC<{
       >
         <mesh position={[0, 0, 1]}>
           <boxBufferGeometry args={[3.6, 3.6, 2]} />
-          <WorldUV scale={0.25} />
+          <WorldUV />
         </mesh>
       </CSGContent>
       <CSGContent material="elevatorTrim">
         <mesh position={[0, -1.9, 0.9]}>
           <boxBufferGeometry args={[2, 0.2, 1.8]} />
-          <WorldUV scale={0.25} />
+          <WorldUV />
         </mesh>
       </CSGContent>
       <CSGContent material="elevatorTrim">
         <mesh position={[0, 1.9, 0.9]}>
           <boxBufferGeometry args={[2, 0.2, 1.8]} />
-          <WorldUV scale={0.25} />
+          <WorldUV />
         </mesh>
       </CSGContent>
 
@@ -109,14 +111,14 @@ export const Elevator: React.FC<{
             <boxBufferGeometry args={[1, 0.15, 1.8]} />
             <meshStandardMaterial color="#b0b4b4" map={panelTexture} />
             <Body isKinematic />
-            <WorldUV scale={0.25} />
+            <WorldUV />
           </animated.mesh>
 
           <animated.mesh position={rightDoorPos as any} castShadow>
             <boxBufferGeometry args={[1, 0.15, 1.8]} />
             <meshStandardMaterial color="#b0b4b4" map={panelTexture} />
             <Body isKinematic />
-            <WorldUV scale={0.25} />
+            <WorldUV />
           </animated.mesh>
 
           <Sensor
@@ -143,14 +145,14 @@ export const Elevator: React.FC<{
             <boxBufferGeometry args={[1, 0.15, 1.8]} />
             <meshStandardMaterial color="#b0b4b4" map={panelTexture} />
             <Body isStatic />
-            <WorldUV scale={0.25} />
+            <WorldUV />
           </mesh>
 
           <mesh position={[0.5, 0, 0.9]} castShadow>
             <boxBufferGeometry args={[1, 0.15, 1.8]} />
             <meshStandardMaterial color="#b0b4b4" map={panelTexture} />
             <Body isStatic />
-            <WorldUV scale={0.25} />
+            <WorldUV />
           </mesh>
         </group>
 

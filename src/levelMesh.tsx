@@ -14,10 +14,12 @@ import { ThreeDummy } from './scene';
 import { DebugOverlayWidgets } from './lmDebug';
 
 // texture from https://opengameart.org/content/metalstone-textures by Spiney
-import concreteTextureUrl from './ft_conc01_c.png';
+// import concreteTextureUrl from './ft_conc01_c.png';
+const concreteTextureUrl = '/assets/kenney/concreteSmooth.png';
 
 // texture from https://opengameart.org/content/50-2k-metal-textures by rubberduck
-import panelTextureUrl from './level/panels.png';
+// import panelTextureUrl from './level/panels.png';
+const panelTextureUrl = '/assets/kenney/wall_metal.png';
 
 // temp math helpers
 const tmpNormal = new THREE.Vector3();
@@ -147,7 +149,7 @@ export const WorldUV: React.FC<{ scale?: number }> = ({ scale, children }) => {
             // @todo check if needs update?
             obj.updateWorldMatrix(true, false);
 
-            applyUVProjection(geom, obj.matrixWorld, scale || 0.125);
+            applyUVProjection(geom, obj.matrixWorld, scale || 1);
           }
         }
       }}
@@ -160,11 +162,16 @@ export const LevelMesh: React.FC = ({ children }) => {
   const concreteTexture = useLoader(THREE.TextureLoader, concreteTextureUrl);
   concreteTexture.wrapS = THREE.RepeatWrapping;
   concreteTexture.wrapT = THREE.RepeatWrapping;
+  concreteTexture.repeat.x = 0.5;
+  concreteTexture.repeat.y = 0.5;
+  concreteTexture.magFilter = THREE.NearestFilter;
 
   const panelTexture = useLoader(THREE.TextureLoader, panelTextureUrl);
   panelTexture.wrapS = THREE.RepeatWrapping;
   panelTexture.wrapT = THREE.RepeatWrapping;
-  // panelTexture.magFilter = THREE.NearestFilter;
+  panelTexture.repeat.x = 0.5;
+  panelTexture.repeat.y = 0.5;
+  panelTexture.magFilter = THREE.NearestFilter;
 
   const [floorBody, setFloorBody] = useState<React.ReactElement | null>(null);
   const [zQuery, setZQuery] = useState<ZQuery | null>(null);

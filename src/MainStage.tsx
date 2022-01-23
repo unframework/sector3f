@@ -112,7 +112,7 @@ export const MainStage: React.FC = () => {
       </TopDownPhysics>
 
       {teleportRequestOrigin && (
-        <group position={[8, 0, 0]}>
+        <group position={[9, 0, 0]}>
           <TopDownPhysics>
             {teleportRequestOrigin && targetIsReady ? (
               <FPSCamera position={[0, -12, 1.25]} look={cameraLook}>
