@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { booleans, primitives, geometries } from '@jscad/modeling';
 import { Polygon } from 'three-csg-ts/lib/esm/Polygon'; // @todo fix exports upstream
 import { Vertex } from 'three-csg-ts/lib/esm/Vertex'; // @todo fix exports upstream
-import { useLoader, useFrame } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { Lightmap } from '@react-three/lightmap';
 import * as THREE from 'three';
 import * as b2 from '@flyover/box2d';
 
+import { useLevelMaterials, floorMaterialList } from './levelMaterials';
 import { Body, useZQueryProvider, ZQuery } from './physics';
 import { CSGRoot, CSGRootProps } from './csg';
 import { applyUVProjection } from './uvProjection';
@@ -160,46 +161,7 @@ export const WorldUV: React.FC<{
 };
 
 export const LevelMesh: React.FC = ({ children }) => {
-  // texture from https://opengameart.org/content/metalstone-textures by Spiney
-  const concreteTexture = useLoader(
-    THREE.TextureLoader,
-    '/assets/opengameart/ft_conc01_c.png'
-  );
-  concreteTexture.wrapS = THREE.RepeatWrapping;
-  concreteTexture.wrapT = THREE.RepeatWrapping;
-  concreteTexture.repeat.set(0.25, 0.25);
-
-  const rawConcreteTexture = useLoader(
-    THREE.TextureLoader,
-    '/assets/opengameart/conc_base01_c_light.png'
-  );
-  rawConcreteTexture.wrapS = THREE.RepeatWrapping;
-  rawConcreteTexture.wrapT = THREE.RepeatWrapping;
-  rawConcreteTexture.repeat.set(0.125, 0.125);
-
-  const blockWallTexture = useLoader(
-    THREE.TextureLoader,
-    '/assets/chilly/Tiles-Large.png'
-  );
-  blockWallTexture.wrapS = THREE.RepeatWrapping;
-  blockWallTexture.wrapT = THREE.RepeatWrapping;
-  blockWallTexture.repeat.set(0.5, 0.5);
-
-  const floorTileTexture = useLoader(
-    THREE.TextureLoader,
-    '/assets/chilly/Floor-Tiles.png'
-  );
-  floorTileTexture.wrapS = THREE.RepeatWrapping;
-  floorTileTexture.wrapT = THREE.RepeatWrapping;
-  floorTileTexture.repeat.set(0.25, 0.25);
-
-  const elevatorWallTexture = useLoader(
-    THREE.TextureLoader,
-    '/assets/sbs/Wood_07.png'
-  );
-  elevatorWallTexture.wrapS = THREE.RepeatWrapping;
-  elevatorWallTexture.wrapT = THREE.RepeatWrapping;
-  elevatorWallTexture.repeat.set(0.5, 0.5);
+  const materials = useLevelMaterials();
 
   const [floorBody, setFloorBody] = useState<React.ReactElement | null>(null);
   const [zQuery, setZQuery] = useState<ZQuery | null>(null);
@@ -217,31 +179,9 @@ export const LevelMesh: React.FC = ({ children }) => {
       {/*<DebugOverlayWidgets />*/}
 
       <CSGRoot
-        // named CSG materials used across the board
-        // (centrally defined here to help consistency across sub-components)
-        materials={{
-          default: <meshStandardMaterial map={concreteTexture} />,
-          rawConcrete: <meshStandardMaterial map={rawConcreteTexture} />,
-          blockWall: <meshStandardMaterial map={blockWallTexture} />,
-          solidLight: (
-            <meshStandardMaterial
-              color="#f0f8ff"
-              emissive={new THREE.Color('#f0f8ff')}
-            />
-          ),
-          elevator: (
-            <meshStandardMaterial color="#a0a0a0" map={elevatorWallTexture} />
-          ),
-          elevatorFloor: <meshStandardMaterial map={floorTileTexture} />,
-          elevatorTrim: <meshStandardMaterial color="#404040" />
-        }}
+        materials={materials}
         onReady={(csg, materialMap) => {
-          const matIndexes = [
-            'default',
-            'rawConcrete',
-            'elevatorTrim',
-            'elevatorFloor'
-          ].map(item => materialMap[item]);
+          const matIndexes = floorMaterialList.map(item => materialMap[item]);
           const polys = csg
             .toPolygons()
             .filter(item => matIndexes.includes(item.shared));
