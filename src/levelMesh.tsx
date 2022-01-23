@@ -175,6 +175,14 @@ export const LevelMesh: React.FC = ({ children }) => {
   blockWallTexture.wrapT = THREE.RepeatWrapping;
   blockWallTexture.repeat.set(0.5, 0.5);
 
+  const floorTileTexture = useLoader(
+    THREE.TextureLoader,
+    '/assets/chilly/Floor-Tiles.png'
+  );
+  floorTileTexture.wrapS = THREE.RepeatWrapping;
+  floorTileTexture.wrapT = THREE.RepeatWrapping;
+  floorTileTexture.repeat.set(0.25, 0.25);
+
   const elevatorWallTexture = useLoader(
     THREE.TextureLoader,
     '/assets/sbs/Wood_07.png'
@@ -205,7 +213,7 @@ export const LevelMesh: React.FC = ({ children }) => {
           default: <meshStandardMaterial map={concreteTexture} />,
           rawConcrete: <meshStandardMaterial map={rawConcreteTexture} />,
           blockWall: <meshStandardMaterial map={blockWallTexture} />,
-          floorLight: (
+          solidLight: (
             <meshStandardMaterial
               color="#f0f8ff"
               emissive={new THREE.Color('#f0f8ff')}
@@ -214,15 +222,15 @@ export const LevelMesh: React.FC = ({ children }) => {
           elevator: (
             <meshStandardMaterial color="#a0a0a0" map={elevatorWallTexture} />
           ),
-          elevatorCeiling: <meshStandardMaterial color="#404040" />,
-          elevatorTrim: <meshStandardMaterial color="#202020" />
+          elevatorFloor: <meshStandardMaterial map={floorTileTexture} />,
+          elevatorTrim: <meshStandardMaterial color="#404040" />
         }}
         onReady={(csg, materialMap) => {
           const matIndexes = [
             'default',
             'rawConcrete',
             'elevatorTrim',
-            'floorLight'
+            'elevatorFloor'
           ].map(item => materialMap[item]);
           const polys = csg
             .toPolygons()

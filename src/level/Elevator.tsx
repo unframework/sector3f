@@ -40,8 +40,8 @@ export const Elevator: React.FC<{
         }
       }
     },
-    leftDoorPos: [-0.5, 0, 0.9],
-    rightDoorPos: [0.5, 0, 0.9],
+    leftDoorPos: [-0.5, 0, 1.1],
+    rightDoorPos: [0.5, 0, 1.1],
     open: false // stash the intended door state for onRest
   }));
 
@@ -73,31 +73,31 @@ export const Elevator: React.FC<{
           'elevator',
           'elevator',
           'elevator',
-          'elevatorCeiling',
-          'floorLight'
+          'solidLight',
+          'elevatorFloor'
         ]}
       >
-        <mesh position={[0, 0, 1]}>
-          <boxBufferGeometry args={[3.6, 3.6, 2]} />
+        <mesh position={[0, 0, 1.25]}>
+          <boxBufferGeometry args={[3.6, 3.6, 2.5]} />
           <WorldUV />
         </mesh>
       </CSGContent>
       <CSGContent material="elevatorTrim">
-        <mesh position={[0, -1.9, 0.9]}>
-          <boxBufferGeometry args={[2, 0.2, 1.8]} />
+        <mesh position={[0, -1.9, 1.1]}>
+          <boxBufferGeometry args={[2, 0.2, 2.2]} />
           <WorldUV />
         </mesh>
       </CSGContent>
       <CSGContent material="elevatorTrim">
-        <mesh position={[0, 1.9, 0.9]}>
-          <boxBufferGeometry args={[2, 0.2, 1.8]} />
+        <mesh position={[0, 1.9, 1.1]}>
+          <boxBufferGeometry args={[2, 0.2, 2.2]} />
           <WorldUV />
         </mesh>
       </CSGContent>
 
       <mesh
-        position={[0, 0, 0.002]}
-        // rotation={new THREE.Euler(Math.PI, 0, 0)}
+        position={[0, 0, 2.498]}
+        rotation={new THREE.Euler(Math.PI, 0, 0)}
         receiveShadow
       >
         <planeGeometry args={[3.4, 3.4]} />
@@ -108,15 +108,15 @@ export const Elevator: React.FC<{
       <LightmapReadOnly>
         <group position={[0, -1.9, 0]}>
           <animated.mesh position={leftDoorPos as any} castShadow>
-            <boxBufferGeometry args={[1, 0.15, 1.8]} />
-            <meshStandardMaterial color="#b0b4b4" map={panelTexture} />
+            <boxBufferGeometry args={[1, 0.15, 2.2]} />
+            <meshStandardMaterial color="#cfcfc0" map={panelTexture} />
             <Body isKinematic />
             <WorldUV />
           </animated.mesh>
 
           <animated.mesh position={rightDoorPos as any} castShadow>
-            <boxBufferGeometry args={[1, 0.15, 1.8]} />
-            <meshStandardMaterial color="#b0b4b4" map={panelTexture} />
+            <boxBufferGeometry args={[1, 0.15, 2.2]} />
+            <meshStandardMaterial color="#cfcfc0" map={panelTexture} />
             <Body isKinematic />
             <WorldUV />
           </animated.mesh>
@@ -131,8 +131,8 @@ export const Elevator: React.FC<{
               const doorOpen = isColliding && !isLocked;
 
               spring.start({
-                leftDoorPos: [doorOpen ? -1.4 : -0.5, 0, 0.9],
-                rightDoorPos: [doorOpen ? 1.4 : 0.5, 0, 0.9],
+                leftDoorPos: [doorOpen ? -1.4 : -0.5, 0, 1.1],
+                rightDoorPos: [doorOpen ? 1.4 : 0.5, 0, 1.1],
                 open: doorOpen
               });
             }}
@@ -141,22 +141,22 @@ export const Elevator: React.FC<{
 
         {/* fake doors on north side */}
         <group position={[0, 1.9, 0]}>
-          <mesh position={[-0.5, 0, 0.9]} castShadow>
-            <boxBufferGeometry args={[1, 0.15, 1.8]} />
-            <meshStandardMaterial color="#b0b4b4" map={panelTexture} />
+          <mesh position={[-0.5, 0, 1.1]} castShadow>
+            <boxBufferGeometry args={[1, 0.15, 2.2]} />
+            <meshStandardMaterial color="#cfcfc0" map={panelTexture} />
             <Body isStatic />
             <WorldUV />
           </mesh>
 
-          <mesh position={[0.5, 0, 0.9]} castShadow>
-            <boxBufferGeometry args={[1, 0.15, 1.8]} />
-            <meshStandardMaterial color="#b0b4b4" map={panelTexture} />
+          <mesh position={[0.5, 0, 1.1]} castShadow>
+            <boxBufferGeometry args={[1, 0.15, 2.2]} />
+            <meshStandardMaterial color="#cfcfc0" map={panelTexture} />
             <Body isStatic />
             <WorldUV />
           </mesh>
         </group>
 
-        <mesh position={[0, -1.75, 1.9]}>
+        <mesh position={[0, -1.75, 2.3]}>
           <boxBufferGeometry args={[2.2, 0.1, 0.15]} />
           <meshStandardMaterial
             color="#101010"
@@ -165,7 +165,7 @@ export const Elevator: React.FC<{
             roughness={0.3}
           />
         </mesh>
-        <mesh position={[0, 1.75, 1.9]}>
+        <mesh position={[0, 1.75, 2.3]}>
           <boxBufferGeometry args={[2.2, 0.1, 0.15]} />
           <meshStandardMaterial
             color="#101010"
@@ -191,7 +191,7 @@ export const Elevator: React.FC<{
       {/* extra light just for door shadows */}
       <LightmapIgnore>
         <pointLight
-          position={[0, 0, 1.75]}
+          position={[0, 0, 1.8]}
           distance={6}
           decay={2}
           color="#f0ffff"

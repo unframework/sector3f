@@ -6,48 +6,7 @@ import { CSGRoot, CSGOp, CSGContent } from './csg';
 import { LevelMesh, WorldUV } from './levelMesh';
 
 import { Elevator } from './level/Elevator';
-
-export const Corridor: React.FC<{ color?: string }> = ({ color }) => {
-  return (
-    <group>
-      <CSGContent
-        material={[
-          'blockWall',
-          'blockWall',
-          'blockWall',
-          'blockWall',
-          'default',
-          'rawConcrete'
-        ]}
-      >
-        <mesh position={[0, 0, 1]}>
-          <boxBufferGeometry args={[2, 10, 2]} />
-          <WorldUV />
-        </mesh>
-      </CSGContent>
-
-      <mesh
-        position={[0, 0, 2.05]}
-        rotation={new THREE.Euler(Math.PI, 0, 0)}
-        receiveShadow
-      >
-        <planeGeometry args={[0.5, 0.5]} />
-        <meshStandardMaterial
-          color="#202020"
-          emissive={new THREE.Color(color || '#ffffe0')}
-          emissiveIntensity={1.2}
-        />
-
-        <CSGContent>
-          <mesh>
-            <boxBufferGeometry args={[0.5, 0.5, 0.1]} />
-            <WorldUV />
-          </mesh>
-        </CSGContent>
-      </mesh>
-    </group>
-  );
-};
+import { UtilityCorridor } from './level/UtilityCorridor';
 
 const rampMatrix = new THREE.Matrix4();
 rampMatrix.makeShear(0, 0.5, 0, 0, 0, 0);
@@ -76,7 +35,7 @@ export const StaticLevel: React.FC<{
         </group>*/}
 
         <group position={[1, -5, 0]}>
-          <Corridor />
+          <UtilityCorridor />
         </group>
 
         <group position={[1, 2, 0]}>
@@ -90,7 +49,7 @@ export const StaticLevel: React.FC<{
           />
 
           <spotLight
-            position={[0, -2.4, 2]}
+            position={[0, -2.4, 2.5]}
             distance={4}
             decay={2}
             penumbra={0.8}
