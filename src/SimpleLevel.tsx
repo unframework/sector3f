@@ -34,7 +34,10 @@ export const SimpleLevel: React.FC<{
           </CSGContent>
         </group>*/}
 
-        <group position={[1, 7, 0]}>
+        <group position={[1, 5, 0]}>
+          <UtilityCorridor />
+        </group>
+        <group position={[1, 9, 0]}>
           <UtilityCorridor />
         </group>
 

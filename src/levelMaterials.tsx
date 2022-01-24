@@ -45,6 +45,14 @@ export function useLevelMaterials() {
   floorTileTexture.wrapT = THREE.RepeatWrapping;
   floorTileTexture.repeat.set(0.25, 0.25);
 
+  const roofSlatTexture = useLoader(
+    THREE.TextureLoader,
+    '/assets/chilly/Roof-Tiles.png'
+  );
+  roofSlatTexture.wrapS = THREE.RepeatWrapping;
+  roofSlatTexture.wrapT = THREE.RepeatWrapping;
+  roofSlatTexture.repeat.set(0.5, 0.5);
+
   const elevatorWallTexture = useLoader(
     THREE.TextureLoader,
     '/assets/sbs/Wood_07.png'
@@ -55,8 +63,11 @@ export function useLevelMaterials() {
 
   return {
     default: <meshStandardMaterial map={concreteTexture} />,
-    rawConcrete: <meshStandardMaterial map={rawConcreteTexture} />,
-    blockWall: <meshStandardMaterial map={blockWallTexture} />,
+    rawConcrete: (
+      <meshStandardMaterial color="#a0a0a0" map={rawConcreteTexture} />
+    ),
+    blockWall: <meshStandardMaterial color="#c0c0c0" map={blockWallTexture} />,
+    roofSlat: <meshStandardMaterial color="#ffffff" map={roofSlatTexture} />,
     solidLight: (
       <meshStandardMaterial
         color="#f0f8ff"

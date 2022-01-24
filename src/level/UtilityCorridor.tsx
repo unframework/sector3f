@@ -13,34 +13,41 @@ export const UtilityCorridor: React.FC<{ color?: string }> = ({ color }) => {
           'blockWall',
           'blockWall',
           'blockWall',
-          'default',
+          'roofSlat',
           'rawConcrete'
         ]}
       >
-        <mesh position={[0, 0, 1.25]}>
-          <boxBufferGeometry args={[2, 8, 2.5]} />
+        <mesh position={[0, 0, 1.5]}>
+          <boxBufferGeometry args={[2, 4, 3]} />
           <WorldUV />
         </mesh>
       </CSGContent>
 
       <mesh
-        position={[0, 0, 2.55]}
+        position={[0, 0, 2.249]}
         rotation={new THREE.Euler(Math.PI, 0, 0)}
         receiveShadow
       >
-        <planeGeometry args={[0.5, 0.5]} />
+        <planeBufferGeometry args={[0.25, 0.5]} />
         <meshStandardMaterial
           color="#202020"
           emissive={new THREE.Color(color || '#ffffe0')}
           emissiveIntensity={1.2}
         />
+      </mesh>
+      <mesh position={[0, 0, 2.275]} receiveShadow>
+        <boxBufferGeometry args={[0.35, 0.6, 0.05]} />
+        <meshStandardMaterial color="#808080" />
 
-        <CSGContent>
-          <mesh>
-            <boxBufferGeometry args={[0.5, 0.5, 0.1]} />
-            <WorldUV />
-          </mesh>
-        </CSGContent>
+        {/* support stem going up */}
+        <mesh
+          position={[0, 0, 0.5]}
+          rotation={new THREE.Euler(Math.PI, 0, 0)}
+          receiveShadow
+        >
+          <boxBufferGeometry args={[0.05, 0.05, 1]} />
+          <meshStandardMaterial color="#808080" />
+        </mesh>
       </mesh>
     </group>
   );
