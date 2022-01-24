@@ -5,6 +5,7 @@ import * as THREE from 'three';
 export const floorMaterialList = [
   'default',
   'rawConcrete',
+  'carpet',
   'elevatorTrim',
   'elevatorFloor'
 ];
@@ -53,6 +54,31 @@ export function useLevelMaterials() {
   roofSlatTexture.wrapT = THREE.RepeatWrapping;
   roofSlatTexture.repeat.set(0.5, 0.5);
 
+  const carpetTexture = useLoader(
+    THREE.TextureLoader,
+    '/assets/chilly/Fabric-Cord.png'
+  );
+  carpetTexture.wrapS = THREE.RepeatWrapping;
+  carpetTexture.wrapT = THREE.RepeatWrapping;
+  carpetTexture.repeat.set(0.5, 0.5);
+
+  const wallpaperTexture = useLoader(
+    THREE.TextureLoader,
+    '/assets/sbs/Metal_09.png'
+  );
+  wallpaperTexture.wrapS = THREE.RepeatWrapping;
+  wallpaperTexture.wrapT = THREE.RepeatWrapping;
+  wallpaperTexture.repeat.set(0.5, 0.5);
+
+  const ceilingTileTexture = useLoader(
+    THREE.TextureLoader,
+    '/assets/sbs/Tile_15_light.png'
+  );
+  ceilingTileTexture.wrapS = THREE.RepeatWrapping;
+  ceilingTileTexture.wrapT = THREE.RepeatWrapping;
+  ceilingTileTexture.offset.set(0.25, 0.25);
+  ceilingTileTexture.repeat.set(0.5, 0.5);
+
   const elevatorWallTexture = useLoader(
     THREE.TextureLoader,
     '/assets/sbs/Wood_07.png'
@@ -68,6 +94,11 @@ export function useLevelMaterials() {
     ),
     blockWall: <meshStandardMaterial color="#c0c0c0" map={blockWallTexture} />,
     roofSlat: <meshStandardMaterial color="#ffffff" map={roofSlatTexture} />,
+    carpet: <meshStandardMaterial color="#d0d0d0" map={carpetTexture} />,
+    wallpaper: <meshStandardMaterial color="#a0a0a0" map={wallpaperTexture} />,
+    ceilingTile: (
+      <meshStandardMaterial color="#e0f0f0" map={ceilingTileTexture} />
+    ),
     solidLight: (
       <meshStandardMaterial
         color="#f0f8ff"
