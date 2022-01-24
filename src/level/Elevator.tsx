@@ -10,10 +10,10 @@ import { WorldUV } from '../levelMesh';
 import { Body, Sensor } from '../physics';
 
 export const Elevator: React.FC<{
-  waitingSignal?: boolean;
+  isReceiving?: boolean;
   isLocked: boolean;
   onInside: () => void;
-}> = ({ waitingSignal, isLocked, onInside }) => {
+}> = ({ isReceiving, isLocked, onInside }) => {
   // @todo dedupe
   // texture from https://opengameart.org/content/50-2k-metal-textures by rubberduck
   const panelTexture = useLoader(
@@ -56,12 +56,12 @@ export const Elevator: React.FC<{
 
   const entryColor = isLocked
     ? new THREE.Color('#ff0000')
-    : waitingSignal
+    : isReceiving
     ? new THREE.Color('#202020')
     : new THREE.Color('#00ff00');
   const exitColor = isLocked
     ? new THREE.Color('#ff0000')
-    : waitingSignal
+    : isReceiving
     ? new THREE.Color('#202020')
     : new THREE.Color('#ff0000');
 
@@ -120,11 +120,13 @@ export const Elevator: React.FC<{
             <Body isKinematic />
             <WorldUV />
           </animated.mesh>
+        </group>
 
+        <group position={[0, isReceiving ? -2.9 : -1.9, 0]}>
           <Sensor
             initShape={() => {
               const shape = new b2.PolygonShape();
-              shape.SetAsBox(2.5, 1);
+              shape.SetAsBox(2.5, isReceiving ? 0.6 : 1);
               return shape;
             }}
             onChange={isColliding => {
@@ -179,7 +181,7 @@ export const Elevator: React.FC<{
       <Sensor
         initShape={() => {
           const shape = new b2.PolygonShape();
-          shape.SetAsBox(2, 2, new b2.Vec2(0, 0));
+          shape.SetAsBox(1.8, 1.8, new b2.Vec2(0, 0));
           return shape;
         }}
         onChange={isColliding => {

@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { CSGRoot, CSGOp, CSGContent } from './csg';
 import { LevelMesh, WorldUV } from './levelMesh';
 import { LevelCompletionCallback, LevelRenderer } from './LevelSequence';
-
+import { DemoEndLevel } from './DemoEndLevel';
 import { Elevator } from './level/Elevator';
 import { UtilityCorridor } from './level/UtilityCorridor';
 
@@ -44,13 +44,18 @@ export const SimpleLevel: React.FC<{
 
         <group position={[1, 13, 0]}>
           <Elevator
-            waitingSignal
+            isReceiving
             isLocked={elevatorLocked}
             onInside={() => {
               setElevatorLocked(true);
 
               // set up next level
-              onComplete(cb => <SimpleLevel onComplete={cb} />, [1, 13]);
+              onComplete(
+                Math.random() < 0.1
+                  ? cb => <DemoEndLevel />
+                  : cb => <SimpleLevel onComplete={cb} />,
+                [1, 13]
+              );
             }}
           />
 
