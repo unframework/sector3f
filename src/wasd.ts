@@ -77,9 +77,9 @@ export function useCameraLook(): CameraLookState {
   useLayoutEffect(() => {
     const moveHandler = (event: MouseEvent) => {
       // @todo enable this
-      // if (!state.isLocked) {
-      //   return;
-      // }
+      if (!state.isLocked) {
+        return;
+      }
 
       const movementX =
         // @ts-ignore
@@ -108,15 +108,12 @@ export function useCameraLook(): CameraLookState {
 
     // hook up events
     document.body.addEventListener('mousemove', moveHandler);
-    document.body.addEventListener('pointerlockchange', pointerLockHandler);
+    document.addEventListener('pointerlockchange', pointerLockHandler);
 
     return () => {
       // clean up events
       document.body.removeEventListener('mousemove', moveHandler);
-      document.body.removeEventListener(
-        'pointerlockchange',
-        pointerLockHandler
-      );
+      document.removeEventListener('pointerlockchange', pointerLockHandler);
     };
   }, []);
 
