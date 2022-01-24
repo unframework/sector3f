@@ -2,6 +2,7 @@ import React, { useRef, useState, useLayoutEffect } from 'react';
 import * as b2 from '@flyover/box2d';
 import { useLoader } from '@react-three/fiber';
 import { LightmapReadOnly, LightmapIgnore } from '@react-three/lightmap';
+import { useSpring, animated } from '@react-spring/three';
 import * as THREE from 'three';
 
 import { CSGOp, CSGContent } from './csg';
@@ -33,6 +34,13 @@ const CeilingLamp: React.FC<{ color?: THREE.Color }> = ({ color }) => {
 
 // @todo add non-lightmapped flicker to one of the far lamps
 export const DemoEndLevel: React.FC = () => {
+  const [{ eyeColor }, spring] = useSpring(() => ({
+    config: { tension: 200, friction: 35, clamp: true },
+    eyeColor: '#000000'
+  }));
+
+  const hasTouchedRef = useRef(false);
+
   return (
     <LevelMesh>
       <CSGContent
@@ -85,10 +93,10 @@ export const DemoEndLevel: React.FC = () => {
           rotation={new THREE.Euler(Math.PI / 2, 0, 0)}
         >
           <planeBufferGeometry args={[0.2, 0.075]} />
-          <meshStandardMaterial
+          <animated.meshStandardMaterial
             color="#000000"
-            emissive={new THREE.Color('#ff0000')}
-            emissiveIntensity={1.2}
+            emissive={(eyeColor as unknown) as THREE.Color}
+            emissiveIntensity={0.8}
           />
         </mesh>
         <mesh
@@ -96,16 +104,26 @@ export const DemoEndLevel: React.FC = () => {
           rotation={new THREE.Euler(Math.PI / 2, 0, 0)}
         >
           <planeBufferGeometry args={[0.2, 0.075]} />
-          <meshStandardMaterial
+          <animated.meshStandardMaterial
             color="#000000"
-            emissive={new THREE.Color('#ff0000')}
-            emissiveIntensity={1.2}
+            emissive={(eyeColor as unknown) as THREE.Color}
+            emissiveIntensity={0.8}
           />
         </mesh>
       </LightmapIgnore>
 
       <group position={[1, 1, 0]} rotation={[0, 0, Math.PI]}>
-        <Elevator isLocked={false} onInside={() => {}} />
+        <Elevator
+          isLocked={false}
+          onTouching={isTouching => {
+            if (isTouching) {
+              hasTouchedRef.current = true;
+            } else if (hasTouchedRef.current) {
+              console.log('hi!');
+              spring.start({ eyeColor: '#ff0000' });
+            }
+          }}
+        />
       </group>
     </LevelMesh>
   );

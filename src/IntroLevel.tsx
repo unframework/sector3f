@@ -31,7 +31,7 @@ export const IntroLevel: React.FC<{
   return (
     <LevelMesh>
       <group position={[1, 1, 0]}>
-        <Elevator isLocked={true} onInside={() => {}} />
+        <Elevator isLocked={true} />
       </group>
     </LevelMesh>
   );

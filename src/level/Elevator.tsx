@@ -12,8 +12,9 @@ import { Body, Sensor } from '../physics';
 export const Elevator: React.FC<{
   isReceiving?: boolean;
   isLocked: boolean;
-  onInside: () => void;
-}> = ({ isReceiving, isLocked, onInside }) => {
+  onEntered?: () => void;
+  onTouching?: (isTouching: boolean) => void;
+}> = ({ isReceiving, isLocked, onEntered, onTouching }) => {
   // @todo dedupe
   // texture from https://opengameart.org/content/50-2k-metal-textures by rubberduck
   const panelTexture = useLoader(
@@ -27,16 +28,18 @@ export const Elevator: React.FC<{
   const insideRef = useRef(false); // no need for useState here
 
   // track latest callback instance
-  const onInsideRef = useRef(onInside);
-  onInsideRef.current = onInside;
+  const onEnteredRef = useRef(onEntered);
+  onEnteredRef.current = onEntered;
+  const onTouchingRef = useRef(onTouching);
+  onTouchingRef.current = onTouching;
 
   const [{ leftDoorPos, rightDoorPos }, spring] = useSpring(() => ({
     config: { tension: 300, friction: 35 },
     onRest: props => {
       if (!props.value.open) {
         // when door has finished closing, check if we need to lock it
-        if (insideRef.current) {
-          onInsideRef.current();
+        if (insideRef.current && onEnteredRef.current) {
+          onEnteredRef.current();
         }
       }
     },
@@ -185,8 +188,11 @@ export const Elevator: React.FC<{
           return shape;
         }}
         onChange={isColliding => {
-          console.log('inside?', isColliding);
           insideRef.current = isColliding;
+
+          if (onTouchingRef.current) {
+            onTouchingRef.current(isColliding);
+          }
         }}
       />
 

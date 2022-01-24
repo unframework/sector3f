@@ -546,7 +546,7 @@ export const Sensor: React.FC<{
   }
 
   // for per-frame state debounce
-  const lastActiveRef = useRef(false);
+  const lastActiveRef = useRef<boolean | null>(null);
 
   // initialize the physics object
   const init = (referenceObject: THREE.Object3D) => {

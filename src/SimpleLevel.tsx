@@ -46,7 +46,7 @@ export const SimpleLevel: React.FC<{
           <Elevator
             isReceiving
             isLocked={elevatorLocked}
-            onInside={() => {
+            onEntered={() => {
               setElevatorLocked(true);
 
               // set up next level
@@ -75,7 +75,7 @@ export const SimpleLevel: React.FC<{
         </group>
 
         <group position={[1, 1, 0]} rotation={[0, 0, Math.PI]}>
-          <Elevator isLocked={false} onInside={() => {}} />
+          <Elevator isLocked={false} />
         </group>
       </LevelMesh>
     </>
