@@ -4,6 +4,7 @@ import * as THREE from 'three';
 
 import { CSGRoot, CSGOp, CSGContent } from './csg';
 import { LevelMesh, WorldUV } from './levelMesh';
+import { LevelCompletionCallback, LevelRenderer } from './LevelSequence';
 
 import { Elevator } from './level/Elevator';
 import { UtilityCorridor } from './level/UtilityCorridor';
@@ -12,7 +13,7 @@ const rampMatrix = new THREE.Matrix4();
 rampMatrix.makeShear(0, 0.5, 0, 0, 0, 0);
 
 export const SimpleLevel: React.FC<{
-  onComplete: (teleportOrigin: [number, number]) => void;
+  onComplete: LevelCompletionCallback;
 }> = ({ onComplete }) => {
   const spotLightRef = useRef<THREE.SpotLight>();
   const spotLightTargetRef = useRef<THREE.Object3D>();
@@ -47,7 +48,9 @@ export const SimpleLevel: React.FC<{
             isLocked={elevatorLocked}
             onInside={() => {
               setElevatorLocked(true);
-              onComplete([1, 13]);
+
+              // set up next level
+              onComplete(cb => <SimpleLevel onComplete={cb} />, [1, 13]);
             }}
           />
 

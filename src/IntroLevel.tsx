@@ -5,11 +5,13 @@ import * as THREE from 'three';
 
 import { CSGOp, CSGContent } from './csg';
 import { LevelMesh, WorldUV } from './levelMesh';
+import { LevelCompletionCallback, LevelRenderer } from './LevelSequence';
 
+import { SimpleLevel } from './SimpleLevel';
 import { Elevator } from './level/Elevator';
 
 export const IntroLevel: React.FC<{
-  onComplete: (teleportOrigin: [number, number]) => void;
+  onComplete: LevelCompletionCallback;
 }> = ({ onComplete }) => {
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
@@ -22,7 +24,7 @@ export const IntroLevel: React.FC<{
         setReady(true);
       }, 500);
     } else {
-      onCompleteRef.current([1, 1]);
+      onCompleteRef.current(cb => <SimpleLevel onComplete={cb} />, [1, 1]);
     }
   }, [ready]);
 
