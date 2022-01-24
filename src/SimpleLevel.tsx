@@ -15,12 +15,6 @@ rampMatrix.makeShear(0, 0.5, 0, 0, 0, 0);
 export const SimpleLevel: React.FC<{
   onComplete: LevelCompletionCallback;
 }> = ({ onComplete }) => {
-  const spotLightRef = useRef<THREE.SpotLight>();
-  const spotLightTargetRef = useRef<THREE.Object3D>();
-  useLayoutEffect(() => {
-    spotLightRef.current!.target = spotLightTargetRef.current!;
-  }, []);
-
   const [elevatorLocked, setElevatorLocked] = useState(false);
 
   return (
@@ -51,27 +45,13 @@ export const SimpleLevel: React.FC<{
 
               // set up next level
               onComplete(
-                Math.random() < 0.1
+                Math.random() < 0.25
                   ? cb => <DemoEndLevel />
                   : cb => <SimpleLevel onComplete={cb} />,
                 [1, 13]
               );
             }}
           />
-
-          <spotLight
-            position={[0, -2.4, 2.5]}
-            distance={4}
-            decay={2}
-            penumbra={0.8}
-            angle={1}
-            color="#c0ffff"
-            intensity={1.5}
-            castShadow
-            ref={spotLightRef}
-          />
-
-          <group position={[0, -2.5, 0]} ref={spotLightTargetRef} />
         </group>
 
         <group position={[1, 1, 0]} rotation={[0, 0, Math.PI]}>

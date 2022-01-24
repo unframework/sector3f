@@ -15,6 +15,12 @@ export const Elevator: React.FC<{
   onEntered?: () => void;
   onTouching?: (isTouching: boolean) => void;
 }> = ({ isReceiving, isLocked, onEntered, onTouching }) => {
+  const spotLightRef = useRef<THREE.SpotLight>();
+  const spotLightTargetRef = useRef<THREE.Object3D>();
+  useLayoutEffect(() => {
+    spotLightRef.current!.target = spotLightTargetRef.current!;
+  }, []);
+
   // @todo dedupe
   // texture from https://opengameart.org/content/50-2k-metal-textures by rubberduck
   const panelTexture = useLoader(
@@ -196,7 +202,7 @@ export const Elevator: React.FC<{
         }}
       />
 
-      {/* extra light just for door shadows */}
+      {/* extra lights just for door shadows */}
       <LightmapIgnore>
         <pointLight
           position={[0, 0, 1.5]}
@@ -206,6 +212,20 @@ export const Elevator: React.FC<{
           castShadow
           intensity={0.75}
         />
+
+        <spotLight
+          position={[0, -2.5, 2.5]}
+          distance={4}
+          decay={2}
+          penumbra={0.8}
+          angle={1}
+          color="#c0ffff"
+          intensity={1.5}
+          castShadow
+          ref={spotLightRef}
+        />
+
+        <group position={[0, -2.4, 0]} ref={spotLightTargetRef} />
       </LightmapIgnore>
     </>
   );
