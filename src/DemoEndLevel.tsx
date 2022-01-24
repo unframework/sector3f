@@ -1,9 +1,10 @@
 import React, { useRef, useState, useLayoutEffect } from 'react';
 import * as b2 from '@flyover/box2d';
-import { useLoader } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { LightmapReadOnly, LightmapIgnore } from '@react-three/lightmap';
 import { useSpring, animated } from '@react-spring/three';
 import * as THREE from 'three';
+import { Text as TroikaTextMesh } from 'troika-three-text';
 
 import { CSGOp, CSGContent } from './csg';
 import { LevelMesh, WorldUV } from './levelMesh';
@@ -34,12 +35,31 @@ const CeilingLamp: React.FC<{ color?: THREE.Color }> = ({ color }) => {
 
 // @todo add non-lightmapped flicker to one of the far lamps
 export const DemoEndLevel: React.FC = () => {
-  const [{ eyeColor }, spring] = useSpring(() => ({
-    config: { tension: 200, friction: 35, clamp: true },
-    eyeColor: '#000000'
+  const [{ eyeColor, textColor }, spring] = useSpring(() => ({
+    config: { tension: 300, friction: 35, clamp: true },
+    eyeColor: '#000000',
+    textColor: '#000000'
   }));
 
   const hasTouchedRef = useRef(false);
+
+  const [troikaMesh] = useState(() => {
+    const textMesh = new TroikaTextMesh();
+    textMesh.text = 'Boo';
+    textMesh.fontSize = 0.5;
+    textMesh.anchorX = 'center';
+    textMesh.anchorY = 'center';
+    textMesh.sync();
+
+    return textMesh;
+  });
+
+  // super cheap trigger
+  useFrame(({ camera }) => {
+    if (camera.position.y > 20) {
+      spring.start({ textColor: '#ffffff' });
+    }
+  });
 
   return (
     <LevelMesh>
@@ -110,6 +130,19 @@ export const DemoEndLevel: React.FC = () => {
             emissiveIntensity={0.8}
           />
         </mesh>
+
+        <group
+          position={[1, 34.99, 1.65]}
+          rotation={new THREE.Euler(Math.PI / 2, 0, 0)}
+        >
+          <primitive object={troikaMesh}>
+            <animated.meshStandardMaterial
+              color="#202020"
+              emissive={(textColor as unknown) as THREE.Color}
+              emissiveIntensity={0.5}
+            />
+          </primitive>
+        </group>
       </LightmapIgnore>
 
       <group position={[1, 1, 0]} rotation={[0, 0, Math.PI]}>
