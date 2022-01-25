@@ -49,8 +49,8 @@ export const Elevator: React.FC<{
         }
       }
     },
-    leftDoorPos: [-0.5, 0, 1.1],
-    rightDoorPos: [0.5, 0, 1.1],
+    leftDoorPos: [-0.4, 0, 1.1],
+    rightDoorPos: [0.4, 0, 1.1],
     open: false // stash the intended door state for onRest
   }));
 
@@ -66,12 +66,12 @@ export const Elevator: React.FC<{
   const entryColor = isLocked
     ? new THREE.Color('#ff0000')
     : isReceiving
-    ? new THREE.Color('#202020')
+    ? new THREE.Color('#000000')
     : new THREE.Color('#00ff00');
   const exitColor = isLocked
     ? new THREE.Color('#ff0000')
     : isReceiving
-    ? new THREE.Color('#202020')
+    ? new THREE.Color('#000000')
     : new THREE.Color('#ff0000');
 
   return (
@@ -87,19 +87,19 @@ export const Elevator: React.FC<{
         ]}
       >
         <mesh position={[0, 0, 1.25]}>
-          <boxBufferGeometry args={[3.6, 3.6, 2.5]} />
+          <boxBufferGeometry args={[3.2, 3.2, 2.5]} />
           <WorldUV />
         </mesh>
       </CSGContent>
       <CSGContent material="elevatorTrim">
-        <mesh position={[0, -1.9, 1.1]}>
-          <boxBufferGeometry args={[2, 0.2, 2.2]} />
+        <mesh position={[0, -1.8, 1.1]}>
+          <boxBufferGeometry args={[1.6, 0.4, 2.2]} />
           <WorldUV />
         </mesh>
       </CSGContent>
       <CSGContent material="elevatorTrim">
-        <mesh position={[0, 1.9, 1.1]}>
-          <boxBufferGeometry args={[2, 0.2, 2.2]} />
+        <mesh position={[0, 1.8, 1.1]}>
+          <boxBufferGeometry args={[1.6, 0.4, 2.2]} />
           <WorldUV />
         </mesh>
       </CSGContent>
@@ -109,29 +109,29 @@ export const Elevator: React.FC<{
         rotation={new THREE.Euler(Math.PI, 0, 0)}
         receiveShadow
       >
-        <planeGeometry args={[3.4, 3.4]} />
+        <planeGeometry args={[3, 3]} />
         <meshStandardMaterial color="#c0c0c0" />
       </mesh>
 
       {/* movable doors on south side */}
       <LightmapReadOnly>
-        <group position={[0, -1.9, 0]}>
+        <group position={[0, -1.8, 0]}>
           <animated.mesh position={leftDoorPos as any} castShadow>
-            <boxBufferGeometry args={[1, 0.15, 2.2]} />
+            <boxBufferGeometry args={[0.8, 0.175, 2.2]} />
             <meshStandardMaterial color="#cfcfc0" map={panelTexture} />
             <Body isKinematic />
             <WorldUV />
           </animated.mesh>
 
           <animated.mesh position={rightDoorPos as any} castShadow>
-            <boxBufferGeometry args={[1, 0.15, 2.2]} />
+            <boxBufferGeometry args={[0.8, 0.175, 2.2]} />
             <meshStandardMaterial color="#cfcfc0" map={panelTexture} />
             <Body isKinematic />
             <WorldUV />
           </animated.mesh>
         </group>
 
-        <group position={[0, isReceiving ? -2.9 : -1.9, 0]}>
+        <group position={[0, isReceiving ? -2.7 : -1.7, 0]}>
           <Sensor
             initShape={() => {
               const shape = new b2.PolygonShape();
@@ -142,8 +142,8 @@ export const Elevator: React.FC<{
               const doorOpen = isColliding && !isLocked;
 
               spring.start({
-                leftDoorPos: [doorOpen ? -1.4 : -0.5, 0, 1.1],
-                rightDoorPos: [doorOpen ? 1.4 : 0.5, 0, 1.1],
+                leftDoorPos: [doorOpen ? -1.15 : -0.4, 0, 1.1],
+                rightDoorPos: [doorOpen ? 1.15 : 0.4, 0, 1.1],
                 open: doorOpen
               });
             }}
@@ -151,38 +151,57 @@ export const Elevator: React.FC<{
         </group>
 
         {/* fake doors on north side */}
-        <group position={[0, 1.9, 0]}>
-          <mesh position={[-0.5, 0, 1.1]} castShadow>
-            <boxBufferGeometry args={[1, 0.15, 2.2]} />
+        <group position={[0, 1.8, 0]}>
+          <mesh position={[-0.4, 0, 1.1]} castShadow>
+            <boxBufferGeometry args={[0.8, 0.175, 2.2]} />
             <meshStandardMaterial color="#cfcfc0" map={panelTexture} />
             <Body isStatic />
             <WorldUV />
           </mesh>
 
-          <mesh position={[0.5, 0, 1.1]} castShadow>
-            <boxBufferGeometry args={[1, 0.15, 2.2]} />
+          <mesh position={[0.4, 0, 1.1]} castShadow>
+            <boxBufferGeometry args={[0.8, 0.175, 2.2]} />
             <meshStandardMaterial color="#cfcfc0" map={panelTexture} />
             <Body isStatic />
             <WorldUV />
           </mesh>
         </group>
 
-        <mesh position={[0, -1.75, 2.3]}>
-          <boxBufferGeometry args={[2.2, 0.1, 0.15]} />
+        <mesh position={[-1.2, -1.58, 1.8]}>
+          <boxBufferGeometry args={[0.36, 0.04, 0.48]} />
           <meshStandardMaterial
-            color="#101010"
+            color="#404040"
             emissive={afterInit ? entryColor : undefined}
             emissiveIntensity={1.2}
-            roughness={0.3}
+            roughness={0.9}
           />
         </mesh>
-        <mesh position={[0, 1.75, 2.3]}>
-          <boxBufferGeometry args={[2.2, 0.1, 0.15]} />
+        <mesh position={[1.2, -1.58, 1.8]}>
+          <boxBufferGeometry args={[0.36, 0.04, 0.48]} />
           <meshStandardMaterial
-            color="#101010"
+            color="#404040"
+            emissive={afterInit ? entryColor : undefined}
+            emissiveIntensity={1.2}
+            roughness={0.9}
+          />
+        </mesh>
+
+        <mesh position={[-1.2, 1.58, 1.8]}>
+          <boxBufferGeometry args={[0.36, 0.04, 0.48]} />
+          <meshStandardMaterial
+            color="#404040"
             emissive={afterInit ? exitColor : undefined}
             emissiveIntensity={1.2}
-            roughness={0.3}
+            roughness={0.9}
+          />
+        </mesh>
+        <mesh position={[1.2, 1.58, 1.8]}>
+          <boxBufferGeometry args={[0.36, 0.04, 0.48]} />
+          <meshStandardMaterial
+            color="#404040"
+            emissive={afterInit ? exitColor : undefined}
+            emissiveIntensity={1.2}
+            roughness={0.9}
           />
         </mesh>
       </LightmapReadOnly>
@@ -190,7 +209,7 @@ export const Elevator: React.FC<{
       <Sensor
         initShape={() => {
           const shape = new b2.PolygonShape();
-          shape.SetAsBox(1.8, 1.8, new b2.Vec2(0, 0));
+          shape.SetAsBox(1.6, 1.6, new b2.Vec2(0, 0));
           return shape;
         }}
         onChange={isColliding => {
