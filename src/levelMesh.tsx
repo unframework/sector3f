@@ -173,7 +173,7 @@ export const LevelMesh: React.FC = ({ children }) => {
     <Lightmap
       disabled={!lightmapActive}
       texelsPerUnit={1}
-      samplerSettings={{ targetSize: 32 }}
+      samplerSettings={{ targetSize: 128 }}
       workPerFrame={1}
     >
       {/*<DebugOverlayWidgets />*/}

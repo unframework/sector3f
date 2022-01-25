@@ -38,7 +38,7 @@ const App: React.FC = () => {
         <OrbitControls target={[0, 0, 0]} />
         */}
 
-        <DebugTopDownPhysics />
+        {/*<DebugTopDownPhysics />*/}
 
         <React.Suspense fallback={null}>
           <MainStage />
