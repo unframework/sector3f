@@ -35,8 +35,20 @@ export const SimpleLevel: React.FC<{
         <group position={[1, 9, 0]}>
           <UtilityCorridor />
         </group>
-
         <group position={[1, 13, 0]}>
+          <UtilityCorridor />
+        </group>
+        <group position={[-1, 11, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <UtilityCorridor color="#000000" />
+        </group>
+        <group position={[-3, 9, 0]}>
+          <UtilityCorridor color="#ffff00" />
+        </group>
+        <group position={[-3, 13, 0]}>
+          <UtilityCorridor color="#000000" />
+        </group>
+
+        <group position={[1, 17, 0]}>
           <Elevator
             isReceiving
             isLocked={elevatorLocked}
@@ -44,12 +56,7 @@ export const SimpleLevel: React.FC<{
               setElevatorLocked(true);
 
               // set up next level
-              onComplete(
-                Math.random() < 0.25
-                  ? cb => <DemoEndLevel />
-                  : cb => <SimpleLevel onComplete={cb} />,
-                [1, 13]
-              );
+              onComplete(cb => <DemoEndLevel />, [1, 17]);
             }}
           />
         </group>
