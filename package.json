@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "cross-env NODE_ENV=development webpack serve --mode development",
-    "dist": "cross-env NODE_ENV=production webpack --mode development"
+    "dist": "cross-env NODE_ENV=production webpack --mode production"
   },
   "author": "",
   "license": "UNLICENSED",
@@ -21,6 +21,8 @@
     "@types/three": "^0.135.0",
     "@types/webfontloader": "^1.6.32",
     "arraybuffer-loader": "^1.0.6",
+    "clean-webpack-plugin": "^4.0.0",
+    "copy-webpack-plugin": "^10.2.1",
     "cross-env": "^5.2.0",
     "css-loader": "^5.0.1",
     "file-loader": "^6.2.0",
