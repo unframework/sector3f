@@ -16,7 +16,7 @@ export function useLevelMaterials() {
   // texture from https://opengameart.org/content/metalstone-textures by Spiney
   const concreteTexture = useLoader(
     THREE.TextureLoader,
-    '/assets/opengameart/ft_conc01_c.png'
+    'assets/opengameart/ft_conc01_c.png'
   );
   concreteTexture.wrapS = THREE.RepeatWrapping;
   concreteTexture.wrapT = THREE.RepeatWrapping;
@@ -24,7 +24,7 @@ export function useLevelMaterials() {
 
   const rawConcreteTexture = useLoader(
     THREE.TextureLoader,
-    '/assets/opengameart/conc_base01_c_light.png'
+    'assets/opengameart/conc_base01_c_light.png'
   );
   rawConcreteTexture.wrapS = THREE.RepeatWrapping;
   rawConcreteTexture.wrapT = THREE.RepeatWrapping;
@@ -32,7 +32,7 @@ export function useLevelMaterials() {
 
   const blockWallTexture = useLoader(
     THREE.TextureLoader,
-    '/assets/chilly/Tiles-Large.png'
+    'assets/chilly/Tiles-Large.png'
   );
   blockWallTexture.wrapS = THREE.RepeatWrapping;
   blockWallTexture.wrapT = THREE.RepeatWrapping;
@@ -40,7 +40,7 @@ export function useLevelMaterials() {
 
   const floorTileTexture = useLoader(
     THREE.TextureLoader,
-    '/assets/chilly/Floor-Tiles.png'
+    'assets/chilly/Floor-Tiles.png'
   );
   floorTileTexture.wrapS = THREE.RepeatWrapping;
   floorTileTexture.wrapT = THREE.RepeatWrapping;
@@ -48,7 +48,7 @@ export function useLevelMaterials() {
 
   const roofSlatTexture = useLoader(
     THREE.TextureLoader,
-    '/assets/chilly/Roof-Tiles.png'
+    'assets/chilly/Roof-Tiles.png'
   );
   roofSlatTexture.wrapS = THREE.RepeatWrapping;
   roofSlatTexture.wrapT = THREE.RepeatWrapping;
@@ -56,7 +56,7 @@ export function useLevelMaterials() {
 
   const carpetTexture = useLoader(
     THREE.TextureLoader,
-    '/assets/chilly/Fabric-Cord.png'
+    'assets/chilly/Fabric-Cord.png'
   );
   carpetTexture.wrapS = THREE.RepeatWrapping;
   carpetTexture.wrapT = THREE.RepeatWrapping;
@@ -64,7 +64,7 @@ export function useLevelMaterials() {
 
   const wallpaperTexture = useLoader(
     THREE.TextureLoader,
-    '/assets/sbs/Metal_09.png'
+    'assets/sbs/Metal_09.png'
   );
   wallpaperTexture.wrapS = THREE.RepeatWrapping;
   wallpaperTexture.wrapT = THREE.RepeatWrapping;
@@ -72,7 +72,7 @@ export function useLevelMaterials() {
 
   const ceilingTileTexture = useLoader(
     THREE.TextureLoader,
-    '/assets/sbs/Tile_15_light.png'
+    'assets/sbs/Tile_15_light.png'
   );
   ceilingTileTexture.wrapS = THREE.RepeatWrapping;
   ceilingTileTexture.wrapT = THREE.RepeatWrapping;
@@ -81,7 +81,7 @@ export function useLevelMaterials() {
 
   const elevatorWallTexture = useLoader(
     THREE.TextureLoader,
-    '/assets/sbs/Wood_07.png'
+    'assets/sbs/Wood_07.png'
   );
   elevatorWallTexture.wrapS = THREE.RepeatWrapping;
   elevatorWallTexture.wrapT = THREE.RepeatWrapping;

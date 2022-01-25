@@ -25,7 +25,7 @@ export const Elevator: React.FC<{
   // texture from https://opengameart.org/content/50-2k-metal-textures by rubberduck
   const panelTexture = useLoader(
     THREE.TextureLoader,
-    '/assets/opengameart/panels.png'
+    'assets/opengameart/panels.png'
   );
   panelTexture.wrapS = THREE.RepeatWrapping;
   panelTexture.wrapT = THREE.RepeatWrapping;
