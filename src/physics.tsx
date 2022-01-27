@@ -20,6 +20,7 @@ interface PhysicsInfo {
 const PhysicsContext = React.createContext<PhysicsInfo | null>(null);
 
 const FPS_CATEGORY_BIT = 1 << 1; // FPS body collision mask bit
+const BOB_OFFSET = 0.03; // e.g. if moving along wall
 
 export function useZQueryProvider(zQuery: ZQuery | null) {
   const info = useContext(PhysicsContext);
@@ -330,10 +331,26 @@ export const FPSBody: React.FC<{
 
     const mass = body.GetMass();
 
+    // set up listener tuple to pass data back to ThreeJS
+    const bodyPos = body.GetPosition();
+    const tuple: ListenerTuple = [
+      body,
+      bodyPos,
+      fpsObject,
+      zOffset,
+      parentInverse
+    ];
+
+    // track head bob
+    let bobAmount = 0; // 0..1
+    let bobDistance = 0;
+    let lastX = bodyDef.position.x;
+    let lastY = bodyDef.position.y;
+
     // per-frame control
     const updater = () => {
       // apply motion as minimum movement impulse against linear damping
-      const [mx, my, sprint] = movementRef.current;
+      const [mx, my, sneak] = movementRef.current;
       const { yaw } = lookRef.current;
 
       // use Y-axis as the "forward" direction
@@ -343,22 +360,37 @@ export const FPSBody: React.FC<{
         impulseTmp.SelfRotate(yaw);
       }
 
-      impulseTmp.SelfMul(STEP * mass * (sprint ? 50 : 20));
+      impulseTmp.SelfMul(STEP * mass * (sneak ? 20 : 50));
       body.ApplyLinearImpulseToCenter(impulseTmp);
 
+      // process the head bob
+      if (mx || my) {
+        // spin up bob amount
+        bobAmount += (1 - bobAmount) * 0.05;
+
+        // add moved distance
+        bobDistance += Math.hypot(lastX - bodyPos.x, lastY - bodyPos.y);
+        lastX = bodyPos.x;
+        lastY = bodyPos.y;
+      } else {
+        // wind down bob amount
+        bobAmount -= bobAmount * 0.1;
+
+        // once fully stopped bobbing, reset travel distance to have consistent start
+        if (bobAmount < 0.02) {
+          bobDistance = 0;
+        }
+      }
+
+      // modify zOffset in the tuple
+      tuple[3] = zOffset + BOB_OFFSET * bobAmount * Math.sin(bobDistance * 2);
+
       // also move the debug view here
-      g_camera.m_center.x += (body.GetPosition().x - g_camera.m_center.x) * 0.1;
-      g_camera.m_center.y += (body.GetPosition().y - g_camera.m_center.y) * 0.1;
+      g_camera.m_center.x += (bodyPos.x - g_camera.m_center.x) * 0.1;
+      g_camera.m_center.y += (bodyPos.y - g_camera.m_center.y) * 0.1;
     };
     bodyUpdaters.push(updater);
 
-    const tuple: ListenerTuple = [
-      body,
-      body.GetPosition(),
-      fpsObject,
-      zOffset,
-      parentInverse
-    ];
     bodyListeners.push(tuple);
 
     // expose reference to body itself
