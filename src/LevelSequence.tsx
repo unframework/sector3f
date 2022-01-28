@@ -39,7 +39,8 @@ export const LevelSequence: React.FC<{
     cloneBody?: b2.Body,
     cloneOrigin?: [number, number]
   ) => React.ReactElement;
-}> = ({ camera }) => {
+  initialLoader: React.ReactElement;
+}> = ({ camera, initialLoader }) => {
   const fpsBodyRef = useRef<b2.Body>();
 
   const [levelStack, setLevelStack] = useState<LevelStackItem[]>(() => [
@@ -101,7 +102,9 @@ export const LevelSequence: React.FC<{
           <group key={levelIndex} position={[levelOffsetX, 0, 0]}>
             <React.Suspense
               fallback={
-                levelIndex === 0 ? null : (
+                levelIndex === 0 ? (
+                  initialLoader
+                ) : (
                   <CompletionTracker onComplete={loadedCb} />
                 )
               }
