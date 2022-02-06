@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { LightmapReadOnly } from '@react-three/lightmap';
 
 import { CSGContent } from '../csg';
-import { WorldUV } from '../levelMesh';
+import { useLevelMaterial, WorldUV } from '../levelMesh';
 import { StairGeometry } from './StairGeometry';
 
 export const UtilityCorridor: React.FC<{ color?: string }> = ({ color }) => {
@@ -61,6 +61,8 @@ const rampMatrix = new THREE.Matrix4();
 rampMatrix.makeShear(0, 0.5, 0, 0, 0, 0);
 
 export const UtilityStair: React.FC<{ color?: string }> = ({ color }) => {
+  const rawConcreteMat = useLevelMaterial('rawConcrete');
+
   return (
     <group>
       <group matrix={rampMatrix} matrixAutoUpdate={false}>
@@ -83,7 +85,8 @@ export const UtilityStair: React.FC<{ color?: string }> = ({ color }) => {
 
       <mesh position={[0, 0, -1.5]}>
         <StairGeometry />
-        <meshStandardMaterial />
+        {rawConcreteMat}
+        <WorldUV />
       </mesh>
     </group>
   );

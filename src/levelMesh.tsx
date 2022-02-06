@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { booleans, primitives, geometries } from '@jscad/modeling';
 import { Polygon } from 'three-csg-ts/lib/esm/Polygon'; // @todo fix exports upstream
 import { Vertex } from 'three-csg-ts/lib/esm/Vertex'; // @todo fix exports upstream
@@ -160,6 +160,21 @@ export const WorldUV: React.FC<{
   );
 };
 
+const LevelMaterialContext = React.createContext<Record<string, JSX.Element>>(
+  {}
+);
+
+export function useLevelMaterial(name: string) {
+  const map = useContext(LevelMaterialContext);
+  const materialNode = map[name];
+
+  if (!materialNode) {
+    throw new Error('unknown level material: ' + name);
+  }
+
+  return materialNode;
+}
+
 export const LevelMesh: React.FC = ({ children }) => {
   const materials = useLevelMaterials();
 
@@ -223,7 +238,9 @@ export const LevelMesh: React.FC = ({ children }) => {
           setLightmapActive(true);
         }}
       >
-        {children}
+        <LevelMaterialContext.Provider value={materials}>
+          {children}
+        </LevelMaterialContext.Provider>
 
         {floorBody}
       </CSGRoot>
