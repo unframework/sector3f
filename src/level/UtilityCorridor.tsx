@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { LightmapReadOnly } from '@react-three/lightmap';
 
 import { CSGContent } from '../csg';
-import { LevelMesh, WorldUV } from '../levelMesh';
+import { WorldUV } from '../levelMesh';
 
 export const UtilityCorridor: React.FC<{ color?: string }> = ({ color }) => {
   return (
