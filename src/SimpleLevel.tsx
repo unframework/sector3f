@@ -7,11 +7,7 @@ import { LevelMesh, WorldUV } from './levelMesh';
 import { LevelCompletionCallback, LevelRenderer } from './LevelSequence';
 import { DemoEndLevel } from './DemoEndLevel';
 import { Elevator } from './level/Elevator';
-import { UtilityCorridor } from './level/UtilityCorridor';
-import { StairGeometry } from './level/StairGeometry';
-
-const rampMatrix = new THREE.Matrix4();
-rampMatrix.makeShear(0, 0.5, 0, 0, 0, 0);
+import { UtilityCorridor, UtilityStair } from './level/UtilityCorridor';
 
 export const SimpleLevel: React.FC<{
   onComplete: LevelCompletionCallback;
@@ -22,47 +18,10 @@ export const SimpleLevel: React.FC<{
     <>
       <LevelMesh>
         <group position={[-4, 5, -0.5]}>
-          <group matrix={rampMatrix} matrixAutoUpdate={false}>
-            <CSGContent
-              material={[
-                'blockWall',
-                'blockWall',
-                'blockWall',
-                'blockWall',
-                'roofSlat',
-                'rawConcrete'
-              ]}
-            >
-              <mesh>
-                <boxBufferGeometry args={[8, 2, 3]} />
-                <WorldUV />
-              </mesh>
-            </CSGContent>
-          </group>
-
-          <mesh position={[0, 0, -1.5]}>
-            <StairGeometry />
-            <meshStandardMaterial />
-          </mesh>
+          <UtilityStair />
         </group>
 
-        <CSGContent
-          material={[
-            'blockWall',
-            'blockWall',
-            'blockWall',
-            'blockWall',
-            'roofSlat',
-            'rawConcrete'
-          ]}
-        >
-          <mesh position={[-9, 5, -2.5]}>
-            <boxBufferGeometry args={[2, 2, 3]} />
-            <WorldUV />
-          </mesh>
-        </CSGContent>
-
-        <group position={[-9, 8, -4]}>
+        <group position={[-9, 6, -4]}>
           <UtilityCorridor />
         </group>
 

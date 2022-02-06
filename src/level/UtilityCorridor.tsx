@@ -4,6 +4,7 @@ import { LightmapReadOnly } from '@react-three/lightmap';
 
 import { CSGContent } from '../csg';
 import { WorldUV } from '../levelMesh';
+import { StairGeometry } from './StairGeometry';
 
 export const UtilityCorridor: React.FC<{ color?: string }> = ({ color }) => {
   return (
@@ -52,6 +53,38 @@ export const UtilityCorridor: React.FC<{ color?: string }> = ({ color }) => {
           </mesh>
         </mesh>
       </LightmapReadOnly>
+    </group>
+  );
+};
+
+const rampMatrix = new THREE.Matrix4();
+rampMatrix.makeShear(0, 0.5, 0, 0, 0, 0);
+
+export const UtilityStair: React.FC<{ color?: string }> = ({ color }) => {
+  return (
+    <group>
+      <group matrix={rampMatrix} matrixAutoUpdate={false}>
+        <CSGContent
+          material={[
+            'blockWall',
+            'blockWall',
+            'blockWall',
+            'blockWall',
+            'roofSlat',
+            'rawConcrete'
+          ]}
+        >
+          <mesh>
+            <boxBufferGeometry args={[8, 2, 3]} />
+            <WorldUV />
+          </mesh>
+        </CSGContent>
+      </group>
+
+      <mesh position={[0, 0, -1.5]}>
+        <StairGeometry />
+        <meshStandardMaterial />
+      </mesh>
     </group>
   );
 };
