@@ -13,11 +13,11 @@ yarn install
 yarn start
 ```
 
-`yarn start` runs webpack-dev-server (see `webpack.config.js`) and opens the demo; click the canvas to lock the pointer, then WASD + mouse to move.
+`yarn start` runs the Vite dev server (see `vite.config.ts`) and opens the demo; click the canvas to lock the pointer, then WASD + mouse to move.
 
-Textures/models are not checked into the repo. `webpack.config.js` points `ASSETS_DIR` at a local folder (currently a hardcoded Windows path) that's copied to `assets/` and served statically — repoint it to wherever your art assets live before `yarn start`/`yarn dist` will work.
+Textures/models are not checked into the repo — drop them into `public/assets/` (gitignored; Vite serves it as-is at `/`) before `yarn start`/`yarn dist` will render anything but placeholder geometry.
 
-`yarn dist` produces a production build in `dist/` and zips it, ready for itch.io.
+`yarn dist` type-checks, produces a production build in `dist/`, and zips it, ready for itch.io.
 
 ## Architecture, in brief
 
