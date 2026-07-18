@@ -7,7 +7,9 @@
     "start": "vite",
     "typecheck": "tsc --noEmit",
     "dist": "tsc --noEmit && vite build && (cd dist && bestzip ../dist.zip . && cd ..)",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "author": "",
   "license": "UNLICENSED",
@@ -36,6 +38,8 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.3",
     "prettier": "^1.19.1",
-    "vite": "^8.1.5"
+    "vite": "^8.1.5",
+    "storybook": "^10.5.2",
+    "@storybook/react-vite": "^10.5.2"
   }
 }

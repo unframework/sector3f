@@ -2,3 +2,6 @@
 /public
 /dist
 /dist.zip
+
+*storybook.log
+storybook-static
