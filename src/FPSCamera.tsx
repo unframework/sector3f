@@ -2,11 +2,11 @@ import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-export const FPSCamera: React.FC<{
+export const FPSCamera: React.FC<React.PropsWithChildren<{
   position: [number, number, number];
   look: { pitch: number; yaw: number };
-}> = ({ position, look, children }) => {
-  const cameraBaseRef = useRef<THREE.Object3D | null>(null);
+}>> = ({ position, look, children }) => {
+  const cameraBaseRef = useRef<THREE.Group>(null);
 
   useFrame(({ camera }) => {
     if (!camera || !(camera instanceof THREE.PerspectiveCamera)) {

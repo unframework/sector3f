@@ -1,6 +1,6 @@
 import React from 'react';
 import * as THREE from 'three';
-import { LightmapReadOnly } from '@react-three/lightmap';
+import { LightmapReadOnly } from '../lightmapShims';
 
 import { CSGContent } from '../csg';
 import { useLevelMaterial, WorldUV } from '../levelMesh';
@@ -20,7 +20,7 @@ export const UtilityCorridor: React.FC<{ color?: string }> = ({ color }) => {
         ]}
       >
         <mesh position={[0, 0, 1.5]}>
-          <boxBufferGeometry args={[2, 4, 3]} />
+          <boxGeometry args={[2, 4, 3]} />
           <WorldUV />
         </mesh>
       </CSGContent>
@@ -31,7 +31,7 @@ export const UtilityCorridor: React.FC<{ color?: string }> = ({ color }) => {
           rotation={new THREE.Euler(Math.PI, 0, 0)}
           receiveShadow
         >
-          <planeBufferGeometry args={[0.25, 0.5]} />
+          <planeGeometry args={[0.25, 0.5]} />
           <meshStandardMaterial
             color="#202020"
             emissive={new THREE.Color(color || '#ffffe0')}
@@ -39,7 +39,7 @@ export const UtilityCorridor: React.FC<{ color?: string }> = ({ color }) => {
           />
         </mesh>
         <mesh position={[0, 0, 2.275]} receiveShadow>
-          <boxBufferGeometry args={[0.35, 0.6, 0.05]} />
+          <boxGeometry args={[0.35, 0.6, 0.05]} />
           <meshStandardMaterial color="#808080" />
 
           {/* support stem going up */}
@@ -48,7 +48,7 @@ export const UtilityCorridor: React.FC<{ color?: string }> = ({ color }) => {
             rotation={new THREE.Euler(Math.PI, 0, 0)}
             receiveShadow
           >
-            <boxBufferGeometry args={[0.05, 0.05, 1]} />
+            <boxGeometry args={[0.05, 0.05, 1]} />
             <meshStandardMaterial color="#808080" />
           </mesh>
         </mesh>
@@ -77,7 +77,7 @@ export const UtilityStair: React.FC<{ color?: string }> = ({ color }) => {
           ]}
         >
           <mesh>
-            <boxBufferGeometry args={[8, 2, 3]} />
+            <boxGeometry args={[8, 2, 3]} />
             <WorldUV />
           </mesh>
         </CSGContent>

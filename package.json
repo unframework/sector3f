@@ -13,33 +13,35 @@
   },
   "author": "",
   "license": "UNLICENSED",
+  "resolutions": {
+    "postprocessing": "6.30.2"
+  },
   "dependencies": {
     "@flyover/box2d": "git+https://github.com/flyover/box2d.ts.git#4bea859",
     "@jscad/modeling": "^2.7.0",
-    "@react-three/drei": "^8.3.0",
-    "@react-three/fiber": "^7.0.0",
+    "@react-three/fiber": "^8.18.0",
     "@react-three/lightmap": "^0.0.8",
-    "@react-three/postprocessing": "^2.0.3",
-    "@types/react": "^17.0.0",
-    "@types/react-dom": "^17.0.0",
-    "@types/three": "^0.135.0",
+    "@react-three/postprocessing": "^2.11.6",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "@types/three": "^0.151.0",
     "@types/webfontloader": "^1.6.32",
     "bestzip": "^2.2.0",
-    "react": "^17.0.0",
-    "react-dom": "^17.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "react-spring": "^9.4.2",
-    "three": "^0.135.0",
-    "three-csg-ts": "^3.1.9",
+    "three": "^0.151.3",
+    "three-csg-ts": "3.1.9",
     "three-stdlib": "^2.6.4",
     "troika-three-text": "^0.45.0",
-    "typescript": "~4.1.0",
+    "typescript": "^5.4.5",
     "webfontloader": "^1.6.28"
   },
   "devDependencies": {
+    "@storybook/react-vite": "^10.5.2",
     "@vitejs/plugin-react": "^6.0.3",
     "prettier": "^1.19.1",
-    "vite": "^8.1.5",
     "storybook": "^10.5.2",
-    "@storybook/react-vite": "^10.5.2"
+    "vite": "^8.1.5"
   }
 }

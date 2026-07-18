@@ -1,7 +1,7 @@
 import React, { useRef, useState, useLayoutEffect } from 'react';
 import * as b2 from '@flyover/box2d';
 import { useLoader } from '@react-three/fiber';
-import { LightmapReadOnly, LightmapIgnore } from '@react-three/lightmap';
+import { LightmapReadOnly, LightmapIgnore } from '../lightmapShims';
 import { useSpring, animated } from '@react-spring/three';
 import * as THREE from 'three';
 
@@ -15,8 +15,8 @@ export const Elevator: React.FC<{
   onEntered?: () => void;
   onTouching?: (isTouching: boolean) => void;
 }> = ({ isReceiving, isLocked, onEntered, onTouching }) => {
-  const spotLightRef = useRef<THREE.SpotLight>();
-  const spotLightTargetRef = useRef<THREE.Object3D>();
+  const spotLightRef = useRef<THREE.SpotLight>(null);
+  const spotLightTargetRef = useRef<THREE.Group>(null);
   useLayoutEffect(() => {
     spotLightRef.current!.target = spotLightTargetRef.current!;
   }, []);
@@ -87,19 +87,19 @@ export const Elevator: React.FC<{
         ]}
       >
         <mesh position={[0, 0, 1.25]}>
-          <boxBufferGeometry args={[3.2, 3.2, 2.5]} />
+          <boxGeometry args={[3.2, 3.2, 2.5]} />
           <WorldUV />
         </mesh>
       </CSGContent>
       <CSGContent material="elevatorTrim">
         <mesh position={[0, -1.8, 1.1]}>
-          <boxBufferGeometry args={[1.6, 0.4, 2.2]} />
+          <boxGeometry args={[1.6, 0.4, 2.2]} />
           <WorldUV />
         </mesh>
       </CSGContent>
       <CSGContent material="elevatorTrim">
         <mesh position={[0, 1.8, 1.1]}>
-          <boxBufferGeometry args={[1.6, 0.4, 2.2]} />
+          <boxGeometry args={[1.6, 0.4, 2.2]} />
           <WorldUV />
         </mesh>
       </CSGContent>
@@ -117,14 +117,14 @@ export const Elevator: React.FC<{
       <LightmapReadOnly>
         <group position={[0, -1.8, 0]}>
           <animated.mesh position={leftDoorPos as any} castShadow>
-            <boxBufferGeometry args={[0.8, 0.175, 2.2]} />
+            <boxGeometry args={[0.8, 0.175, 2.2]} />
             <meshStandardMaterial color="#cfcfc0" map={panelTexture} />
             <Body isKinematic />
             <WorldUV />
           </animated.mesh>
 
           <animated.mesh position={rightDoorPos as any} castShadow>
-            <boxBufferGeometry args={[0.8, 0.175, 2.2]} />
+            <boxGeometry args={[0.8, 0.175, 2.2]} />
             <meshStandardMaterial color="#cfcfc0" map={panelTexture} />
             <Body isKinematic />
             <WorldUV />
@@ -153,14 +153,14 @@ export const Elevator: React.FC<{
         {/* fake doors on north side */}
         <group position={[0, 1.8, 0]}>
           <mesh position={[-0.4, 0, 1.1]} castShadow>
-            <boxBufferGeometry args={[0.8, 0.175, 2.2]} />
+            <boxGeometry args={[0.8, 0.175, 2.2]} />
             <meshStandardMaterial color="#cfcfc0" map={panelTexture} />
             <Body isStatic />
             <WorldUV />
           </mesh>
 
           <mesh position={[0.4, 0, 1.1]} castShadow>
-            <boxBufferGeometry args={[0.8, 0.175, 2.2]} />
+            <boxGeometry args={[0.8, 0.175, 2.2]} />
             <meshStandardMaterial color="#cfcfc0" map={panelTexture} />
             <Body isStatic />
             <WorldUV />
@@ -168,7 +168,7 @@ export const Elevator: React.FC<{
         </group>
 
         <mesh position={[-1.2, -1.58, 1.8]}>
-          <boxBufferGeometry args={[0.36, 0.04, 0.48]} />
+          <boxGeometry args={[0.36, 0.04, 0.48]} />
           <meshStandardMaterial
             color="#404040"
             emissive={afterInit ? entryColor : undefined}
@@ -177,7 +177,7 @@ export const Elevator: React.FC<{
           />
         </mesh>
         <mesh position={[1.2, -1.58, 1.8]}>
-          <boxBufferGeometry args={[0.36, 0.04, 0.48]} />
+          <boxGeometry args={[0.36, 0.04, 0.48]} />
           <meshStandardMaterial
             color="#404040"
             emissive={afterInit ? entryColor : undefined}
@@ -187,7 +187,7 @@ export const Elevator: React.FC<{
         </mesh>
 
         <mesh position={[-1.2, 1.58, 1.8]}>
-          <boxBufferGeometry args={[0.36, 0.04, 0.48]} />
+          <boxGeometry args={[0.36, 0.04, 0.48]} />
           <meshStandardMaterial
             color="#404040"
             emissive={afterInit ? exitColor : undefined}
@@ -196,7 +196,7 @@ export const Elevator: React.FC<{
           />
         </mesh>
         <mesh position={[1.2, 1.58, 1.8]}>
-          <boxBufferGeometry args={[0.36, 0.04, 0.48]} />
+          <boxGeometry args={[0.36, 0.04, 0.48]} />
           <meshStandardMaterial
             color="#404040"
             emissive={afterInit ? exitColor : undefined}

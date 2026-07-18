@@ -10,7 +10,9 @@ import { FPSBody, TopDownPhysics } from '../physics';
 // (see src/index.tsx + src/MainStage.tsx + src/LevelSequence.tsx), minus the
 // multi-level stacking/teleport machinery, so a single level or fixture can
 // be dropped in and played directly from a story
-export const PlaygroundStage: React.FC = ({ children }) => {
+export const PlaygroundStage: React.FC<React.PropsWithChildren<{}>> = ({
+  children
+}) => {
   const cameraLook = useCameraLook();
   const wasdMovement = useWASD();
 

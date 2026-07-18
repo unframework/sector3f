@@ -85,7 +85,9 @@ const DUMMY_Z_QUERY = () => null;
 
 // draw all the ongoing simulations at once, for current global camera view
 const debugWorldList: b2.World[] = [];
-export const DebugTopDownPhysics: React.FC = ({ children }) => {
+export const DebugTopDownPhysics: React.FC<React.PropsWithChildren<{}>> = ({
+  children
+}) => {
   useEffect(() => {
     const canvas = document.createElement('canvas');
     document.body.appendChild(canvas);
@@ -149,7 +151,9 @@ export const DebugTopDownPhysics: React.FC = ({ children }) => {
   return null;
 };
 
-export const TopDownPhysics: React.FC = ({ children }) => {
+export const TopDownPhysics: React.FC<React.PropsWithChildren<{}>> = ({
+  children
+}) => {
   // initialize context value
   const [activeContextValue] = useState<PhysicsInfo>(() => {
     const world = new b2.World(new b2.Vec2(0, 0));
@@ -483,7 +487,7 @@ export const Body: React.FC<{
 
     // get set of shapes for this body
     const shapes: b2.Shape[] = [];
-    if (meshGeom instanceof THREE.BoxBufferGeometry) {
+    if (meshGeom instanceof THREE.BoxGeometry) {
       const shape = new b2.PolygonShape();
       // reduce by m_radius - the "polygon skin" width - to avoid gaps
       shape.SetAsBox(
@@ -493,7 +497,7 @@ export const Body: React.FC<{
       shapes.push(shape);
     } else {
       if (!initShapeRef.current) {
-        throw new Error('must specify shape init if not BoxBufferGeometry');
+        throw new Error('must specify shape init if not BoxGeometry');
       }
 
       const customShapes = initShapeRef.current();

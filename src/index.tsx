@@ -1,13 +1,10 @@
 import React, { useRef, useEffect } from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import WebFont from 'webfontloader';
 import { Canvas } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
-import { PerspectiveCamera, OrbitControls } from '@react-three/drei';
-import * as THREE from 'three';
 
 import { MainStage } from './MainStage';
-import { DebugTopDownPhysics } from './physics';
 
 import './index.css';
 
@@ -64,6 +61,8 @@ const App: React.FC = () => {
 //   },
 
 //   active: function() {
-ReactDOM.render(React.createElement(App), document.getElementById('root'));
+createRoot(document.getElementById('root')!).render(
+  React.createElement(App)
+);
 //   }
 // });

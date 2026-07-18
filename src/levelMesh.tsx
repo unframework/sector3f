@@ -137,7 +137,7 @@ export const WorldUV: React.FC<{
   dy?: number;
   dz?: number;
   scale?: number;
-}> = ({ dx, dy, dz, scale, children }) => {
+}> = ({ dx, dy, dz, scale }) => {
   return (
     <ThreeDummy
       init={obj => {
@@ -175,7 +175,9 @@ export function useLevelMaterial(name: string) {
   return materialNode;
 }
 
-export const LevelMesh: React.FC = ({ children }) => {
+export const LevelMesh: React.FC<React.PropsWithChildren<{}>> = ({
+  children
+}) => {
   const materials = useLevelMaterials();
 
   const [floorBody, setFloorBody] = useState<React.ReactElement | null>(null);

@@ -13,7 +13,7 @@ export const DebugOverlayWidgets: React.FC = React.memo(() => {
     return new THREE.OrthographicCamera(0, 100, 100, 100 * (1 - aspect), -1, 1);
   }, [size]);
 
-  const debugSceneRef = useRef<THREE.Scene>();
+  const debugSceneRef = useRef<THREE.Scene>(null);
 
   useFrame(({ gl }) => {
     if (!debugSceneRef.current) {
@@ -40,7 +40,7 @@ export const DebugOverlayWidgets: React.FC = React.memo(() => {
       <scene name="Debug Overlay" ref={debugSceneRef}>
         {outputTexture && (
           <mesh position={[85, 85, 0]}>
-            <planeBufferGeometry attach="geometry" args={[20, 20]} />
+            <planeGeometry attach="geometry" args={[20, 20]} />
             <meshBasicMaterial
               attach="material"
               map={outputTexture as any}
@@ -51,7 +51,7 @@ export const DebugOverlayWidgets: React.FC = React.memo(() => {
 
         {atlasTexture && (
           <mesh position={[85, 64, 0]}>
-            <planeBufferGeometry attach="geometry" args={[20, 20]} />
+            <planeGeometry attach="geometry" args={[20, 20]} />
             <meshBasicMaterial
               attach="material"
               map={atlasTexture as any}

@@ -6,9 +6,7 @@ import React, {
   useRef
 } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useHelper } from '@react-three/drei';
 import * as THREE from 'three';
-import { VertexNormalsHelper } from 'three-stdlib';
 import { booleans, primitives, geometries, transforms } from '@jscad/modeling';
 import { CSG } from 'three-csg-ts';
 import { Vertex } from 'three-csg-ts/lib/esm/Vertex';
@@ -49,27 +47,27 @@ const identity = new THREE.Matrix4();
 // special heuristic CSG shape generation based on box geometry
 const BOX_FACE_INDICES = [0, 1, 4, 5];
 function CSG_fromBoxGeometry(
-  geom: THREE.BoxBufferGeometry,
+  geom: THREE.BoxGeometry,
   objectIndex: number | number[]
 ) {
   let polys = [];
   const faceGroups = geom.groups;
   if (faceGroups.length !== 6) {
-    throw new Error('expecting 6 BoxBufferGeometry face groups');
+    throw new Error('expecting 6 BoxGeometry face groups');
   }
 
-  const posattr = geom.attributes.position;
-  const normalattr = geom.attributes.normal;
-  const uvattr = geom.attributes.uv;
-  const colorattr = geom.attributes.color;
+  const posattr = geom.attributes.position as THREE.BufferAttribute;
+  const normalattr = geom.attributes.normal as THREE.BufferAttribute;
+  const uvattr = geom.attributes.uv as THREE.BufferAttribute | undefined;
+  const colorattr = geom.attributes.color as THREE.BufferAttribute | undefined;
 
   if (!geom.index) {
-    throw new Error('BoxBufferGeometry should have index attr');
+    throw new Error('BoxGeometry should have index attr');
   }
   const index = geom.index.array;
 
   if (geom.index.count !== 3 * 12) {
-    throw new Error('BoxBufferGeometry should have 12 faces');
+    throw new Error('BoxGeometry should have 12 faces');
   }
 
   polys = [];
@@ -98,12 +96,12 @@ function CSG_fromBoxGeometry(
         new Vector(x, y, z),
         new Vector(nx, ny, nz),
         new Vector(u, v, 0),
-        colorattr &&
+        (colorattr &&
           new Vector(
             colorattr.array[vt],
             colorattr.array[vt + 1],
             colorattr.array[vt + 2]
-          )
+          )) as Vector
       );
     }
 
@@ -124,10 +122,10 @@ function CSG_fromBoxGeometry(
 // original CSG polygon generation from upstream
 function CSG_fromGeometry(geom: THREE.BufferGeometry, objectIndex?: any) {
   let polys = [];
-  const posattr = geom.attributes.position;
-  const normalattr = geom.attributes.normal;
-  const uvattr = geom.attributes.uv;
-  const colorattr = geom.attributes.color;
+  const posattr = geom.attributes.position as THREE.BufferAttribute;
+  const normalattr = geom.attributes.normal as THREE.BufferAttribute;
+  const uvattr = geom.attributes.uv as THREE.BufferAttribute | undefined;
+  const colorattr = geom.attributes.color as THREE.BufferAttribute | undefined;
   const grps = geom.groups;
   let index;
 
@@ -160,12 +158,12 @@ function CSG_fromGeometry(geom: THREE.BufferGeometry, objectIndex?: any) {
         new Vector(x, y, z),
         new Vector(nx, ny, nz),
         new Vector(u, v, 0),
-        colorattr &&
+        (colorattr &&
           new Vector(
             colorattr.array[vt],
             colorattr.array[vt + 1],
             colorattr.array[vt + 2]
-          )
+          )) as Vector
       );
     }
 
@@ -190,7 +188,7 @@ function CSG_fromMesh(mesh: THREE.Mesh, objectIndex: number | number[]): CSG {
   tmpm3.getNormalMatrix(mesh.matrix);
 
   const polys =
-    mesh.geometry instanceof THREE.BoxBufferGeometry
+    mesh.geometry instanceof THREE.BoxGeometry
       ? CSG_fromBoxGeometry(mesh.geometry, objectIndex)
       : CSG_fromGeometry(mesh.geometry, objectIndex);
   for (let i = 0; i < polys.length; i++) {
@@ -206,7 +204,7 @@ function CSG_fromMesh(mesh: THREE.Mesh, objectIndex: number | number[]): CSG {
 
 export const CSGContent: React.FC<{
   material?: string | string[];
-  children: React.ReactElement<'mesh'>;
+  children: React.ReactElement<JSX.IntrinsicElements['mesh']>;
 }> = ({ material, children }) => {
   // read once
   const materialRef = useRef(material);
@@ -276,7 +274,10 @@ const emptyCSG = CSG.fromPolygons([]);
 export type CSGOpProps = {
   type: 'union' | 'subtract' | 'intersect' | 'inverse';
 };
-export const CSGOp: React.FC<CSGOpProps> = ({ type, children }) => {
+export const CSGOp: React.FC<React.PropsWithChildren<CSGOpProps>> = ({
+  type,
+  children
+}) => {
   const { items, ...parentContext } = useContext(CSGContext);
 
   const [localCtx] = useState<CSGInfo>(() => ({
@@ -333,13 +334,13 @@ export interface CSGRootProps {
   onReady: (csg: CSG, materialMap: Record<string, number>) => void;
   debug?: boolean;
 }
-export const CSGRoot: React.FC<CSGRootProps> = ({
+export const CSGRoot: React.FC<React.PropsWithChildren<CSGRootProps>> = ({
   materials,
   onReady,
   debug,
   children
 }) => {
-  const rootRef = useRef<THREE.Object3D>();
+  const rootRef = useRef<THREE.Group>(null);
 
   // read once
   const materialsRef = useRef(materials);
@@ -412,15 +413,12 @@ export const CSGRoot: React.FC<CSGRootProps> = ({
     gl.autoClear = true;
   }, 10);
 
-  const meshRef = useRef();
-  // useHelper(meshRef, VertexNormalsHelper, 0.25, 'red');
-
   return (
     <CSGContext.Provider value={localCtx}>
       {!geom && <group ref={rootRef} />}
 
       {geom && (
-        <mesh ref={meshRef} castShadow receiveShadow>
+        <mesh castShadow receiveShadow>
           <primitive attach="geometry" object={geom} />
           {materialList}
         </mesh>

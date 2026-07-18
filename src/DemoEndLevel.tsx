@@ -1,7 +1,7 @@
 import React, { useRef, useState, useLayoutEffect } from 'react';
 import * as b2 from '@flyover/box2d';
 import { useFrame } from '@react-three/fiber';
-import { LightmapReadOnly, LightmapIgnore } from '@react-three/lightmap';
+import { LightmapReadOnly, LightmapIgnore } from './lightmapShims';
 import { useSpring, animated } from '@react-spring/three';
 import * as THREE from 'three';
 import { Text as TroikaTextMesh } from 'troika-three-text';
@@ -14,7 +14,7 @@ import { Elevator } from './level/Elevator';
 const CeilingLamp: React.FC<{ color?: THREE.Color }> = ({ color }) => {
   return (
     <mesh receiveShadow>
-      <boxBufferGeometry args={[3, 1, 0.1]} />
+      <boxGeometry args={[3, 1, 0.1]} />
       <meshStandardMaterial color="#a0a0a0" />
 
       <mesh
@@ -22,7 +22,7 @@ const CeilingLamp: React.FC<{ color?: THREE.Color }> = ({ color }) => {
         rotation={new THREE.Euler(Math.PI, 0, 0)}
         receiveShadow
       >
-        <planeBufferGeometry args={[2.8, 0.8]} />
+        <planeGeometry args={[2.8, 0.8]} />
         <meshStandardMaterial
           color="#202020"
           emissive={color || new THREE.Color('#ffff80')}
@@ -74,7 +74,7 @@ export const DemoEndLevel: React.FC = () => {
         ]}
       >
         <mesh position={[1, 19, 1.5]}>
-          <boxBufferGeometry args={[5, 32, 3]} />
+          <boxGeometry args={[5, 32, 3]} />
           <WorldUV />
         </mesh>
       </CSGContent>
@@ -105,14 +105,14 @@ export const DemoEndLevel: React.FC = () => {
           position={[1, 34.995, 2]}
           rotation={new THREE.Euler(Math.PI / 2, 0, 0)}
         >
-          <circleBufferGeometry args={[2, 32]} />
+          <circleGeometry args={[2, 32]} />
           <meshStandardMaterial color="#000000" />
         </mesh>
         <mesh
           position={[0.2, 34.99, 2]}
           rotation={new THREE.Euler(Math.PI / 2, 0, 0)}
         >
-          <planeBufferGeometry args={[0.2, 0.075]} />
+          <planeGeometry args={[0.2, 0.075]} />
           <animated.meshStandardMaterial
             color="#000000"
             emissive={(eyeColor as unknown) as THREE.Color}
@@ -123,7 +123,7 @@ export const DemoEndLevel: React.FC = () => {
           position={[1.8, 34.99, 2]}
           rotation={new THREE.Euler(Math.PI / 2, 0, 0)}
         >
-          <planeBufferGeometry args={[0.2, 0.075]} />
+          <planeGeometry args={[0.2, 0.075]} />
           <animated.meshStandardMaterial
             color="#000000"
             emissive={(eyeColor as unknown) as THREE.Color}

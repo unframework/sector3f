@@ -8,7 +8,7 @@ export const ThreeDummy: React.FC<{
   const initRef = useRef(init); // read only once
 
   const [parentObject, setParentObject] = useState<THREE.Object3D | null>(null);
-  const groupRef = useRef<THREE.Object3D | null>(null);
+  const groupRef = useRef<THREE.Group>(null);
 
   // @todo consider layout effect?
   useLayoutEffect(() => {
