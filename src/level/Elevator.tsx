@@ -1,4 +1,4 @@
-import React, { useRef, useState, useLayoutEffect } from 'react';
+import React, { useRef, useLayoutEffect } from 'react';
 import * as b2 from '@flyover/box2d';
 import { useLoader } from '@react-three/fiber';
 import { LightmapReadOnly, LightmapIgnore } from '../lightmapShims';
@@ -53,15 +53,6 @@ export const Elevator: React.FC<{
     rightDoorPos: [0.4, 0, 1.1],
     open: false // stash the intended door state for onRest
   }));
-
-  // set up after-init flag to render meshes once lightmap is complete
-  // @todo proper lightmap opt-out
-  const [afterInit, setAfterInit] = useState(false);
-  useLayoutEffect(() => {
-    setTimeout(() => {
-      setAfterInit(true);
-    }, 0);
-  }, []);
 
   const entryColor = isLocked
     ? new THREE.Color('#ff0000')
@@ -166,12 +157,14 @@ export const Elevator: React.FC<{
             <WorldUV />
           </mesh>
         </group>
+      </LightmapReadOnly>
 
+      <LightmapIgnore>
         <mesh position={[-1.2, -1.58, 1.8]}>
           <boxGeometry args={[0.36, 0.04, 0.48]} />
           <meshStandardMaterial
             color="#404040"
-            emissive={afterInit ? entryColor : undefined}
+            emissive={entryColor}
             emissiveIntensity={1.2}
             roughness={0.9}
           />
@@ -180,7 +173,7 @@ export const Elevator: React.FC<{
           <boxGeometry args={[0.36, 0.04, 0.48]} />
           <meshStandardMaterial
             color="#404040"
-            emissive={afterInit ? entryColor : undefined}
+            emissive={entryColor}
             emissiveIntensity={1.2}
             roughness={0.9}
           />
@@ -190,7 +183,7 @@ export const Elevator: React.FC<{
           <boxGeometry args={[0.36, 0.04, 0.48]} />
           <meshStandardMaterial
             color="#404040"
-            emissive={afterInit ? exitColor : undefined}
+            emissive={exitColor}
             emissiveIntensity={1.2}
             roughness={0.9}
           />
@@ -199,12 +192,12 @@ export const Elevator: React.FC<{
           <boxGeometry args={[0.36, 0.04, 0.48]} />
           <meshStandardMaterial
             color="#404040"
-            emissive={afterInit ? exitColor : undefined}
+            emissive={exitColor}
             emissiveIntensity={1.2}
             roughness={0.9}
           />
         </mesh>
-      </LightmapReadOnly>
+      </LightmapIgnore>
 
       <Sensor
         initShape={() => {
