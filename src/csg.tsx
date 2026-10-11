@@ -361,11 +361,10 @@ export const CSGRoot: React.FC<React.PropsWithChildren<CSGRootProps>> = ({
 
   const materialList = useMemo(
     () =>
-      Object.keys(materialsRef.current).map(mat =>
+      Object.keys(materialsRef.current).map((mat, index) =>
         React.cloneElement(materialsRef.current[mat], {
           key: mat,
-          attach: undefined, // clear just in case
-          attachArray: 'material'
+          attach: `material-${index}`
         })
       ),
     []
@@ -418,7 +417,7 @@ export const CSGRoot: React.FC<React.PropsWithChildren<CSGRootProps>> = ({
       {!geom && <group ref={rootRef} />}
 
       {geom && (
-        <mesh castShadow receiveShadow>
+        <mesh castShadow receiveShadow material={[]}>
           <primitive attach="geometry" object={geom} />
           {materialList}
         </mesh>
